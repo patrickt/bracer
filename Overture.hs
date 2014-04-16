@@ -12,7 +12,7 @@ module Overture
                       , Floating (..)
                       , Fractional (..)
                       , Integral (..)
-                      , Integer (..)
+                      , Integer
                       , Num (..)
                       , Real (..)
                       , RealFloat (..)
@@ -35,7 +35,7 @@ module Overture
                       )
   
   -- The important components of the base package
-  import Control.Applicative as X
+  import Control.Applicative as X hiding (liftA)
   import Control.Arrow as X
   import Control.Category as X
   import Control.Exception as X
@@ -50,6 +50,7 @@ module Overture
   import Control.Monad.Fix as X
   import Data.Bool as X
   import Data.Char as X
+  import Data.Comp as X hiding ( Const )
   import Data.Data as X
   import Data.Either as X
   import Data.Eq as X
@@ -90,8 +91,6 @@ module Overture
   import Data.Typeable as X
   import Data.Word as X
   
-  -- GHC-specific extensions: generics and the useful-but-overlooked roundTo
-  import GHC.Generics as X hiding ( Fixity (..) )
   import GHC.Float as X ( roundTo )
   
   -- System facilities

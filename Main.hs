@@ -7,3 +7,4 @@ module Main where
   import Language.Bracer.Syntax.Literals
 
   main = print "hi"
+ 
