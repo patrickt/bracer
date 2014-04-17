@@ -51,26 +51,41 @@ module Language.Bracer.Parser where
     infixTable :: OperatorTable m (Term ExpressionSig)
 
   instance ExpressionParsing BParser where
-    
+    postfixTable = standardPostfixTable
 
   standardPostfixTable :: OperatorTable BParser (Term ExpressionSig)
   standardPostfixTable = 
-    [[ E.Postfix parseIndex ]]
-    
-
+    [ [ E.Postfix parseCall ]
+    , [ E.Postfix parseIndex ]
+    , [ E.Postfix parseAccess ]
+    --, [ E.Postfix parsePostInc, E.Postfix parsePostDec ]
+    ]
 
   infixl 1 <$$>
   a <$$> b = (flip a) <$> b
 
-  parseIndex :: (ExpressionParsing m) => m (Term ExpressionSig -> Term ExpressionSig)
+  parseIndex, parseCall, parseAccess :: (ExpressionParsing m) => m (Term ExpressionSig -> Term ExpressionSig)
   parseIndex = iIndex <$$> brackets parseExpression
+  parseCall  = iCall  <$$> parens (commaSep parseExpression)
+
+  parseAccess = do
+    op <- choice 
+      [ iDot <$ dot
+      , iArrow <$ symbol "->"
+      ]
+    ident <- parseIdent
+    return (\x -> iAccess x op (deepInject ident))
+
 
   parsePrimary :: (ExpressionParsing m) => m (Term ExpressionSig)
   parsePrimary = choice 
-    [ iIdent     <$> Name <$> ident identifierStyle <?> "identifier"
+    [ deepInject <$> parseIdent
     , deepInject <$> parseLiteral
     , iParen     <$> parens parseExpression
     ]
+
+  parseIdent :: (ExpressionParsing m) => m (Term Ident)
+  parseIdent = iIdent <$> Name <$> ident identifierStyle <?> "identifier"
 
   parseConstant :: (ExpressionParsing m) => m (Term ExpressionSig)
   parseConstant = E.buildExpressionParser (postfixTable <> prefixTable <> infixTable) parsePrimary
