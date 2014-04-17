@@ -6,17 +6,7 @@ module Language.Bracer.Syntax.Literals where
   import Data.ByteString (ByteString)
   import Data.Comp.Derive
   import Data.Scientific
-
-  data Suffix = U | L | LL | F | D
-    deriving (Eq, Show) 
   
-  --
-  --data Number f = Number 
-  --  { _numberValue :: f
-  --  , _numberBase  :: Int
-  --  , _numberSuffix :: [Suffix]
-  --  } deriving (Eq, Show, Functor, Foldable, Traversable)
-
   data Literal a 
     = IntLit Integer
     | FltLit Scientific
