@@ -14,4 +14,5 @@ module Language.Bracer.Syntax.Literals where
     | StrLit ByteString
     deriving (Show, Eq, Functor, Foldable, Traversable)
   
-  smartConstructors ''Literal
+  derive [ smartConstructors, makeShowF, makeEqF ] [ ''Literal ]
+  

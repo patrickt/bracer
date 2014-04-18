@@ -13,6 +13,18 @@ module Language.Bracer.Syntax.Operators where
     | Cast a
     | Dot
     | Arrow
+    | Inc
+    | Dec
+    | PostInc
+    | PostDec
+    | Ref
+    | Deref
+    | Pos
+    | Neg
+    | Bitwise (Operator a)
+    | SizeOf
+    | Not
     deriving (Eq, Show, Functor, Foldable, Traversable)
-
-  smartConstructors ''Operator
+  
+  derive [ smartConstructors, makeShowF, makeEqF ] [ ''Operator ]
+  

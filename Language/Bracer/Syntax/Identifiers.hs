@@ -13,4 +13,4 @@ module Language.Bracer.Syntax.Identifiers where
   newtype Ident a = Ident Name 
     deriving (Eq, Show, Functor, Foldable, Traversable)
 
-  smartConstructors ''Ident
+  derive [ smartConstructors, makeShowF, makeEqF ] [ ''Ident ]

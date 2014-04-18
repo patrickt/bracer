@@ -1,7 +1,7 @@
 module Language.Bracer.Parser where
 
   import Prelude (undefined)
-  import Overture
+  import Overture hiding (try)
 
   import Language.Bracer.Syntax.Literals
   import Language.Bracer.Syntax.Identifiers
@@ -15,8 +15,9 @@ module Language.Bracer.Parser where
   import Text.Parser.Token.Style
 
   import qualified Text.Parser.Expression as E
-
-  newtype BParser a = BParser { unBParser :: Parser a }
+  
+  -- Parser for C99; will use this to illustrate assembling a curly-brace-language parser
+  newtype CParser a = CParser { unCParser :: Parser a }
     deriving ( Functor
              , Applicative
              , Alternative
@@ -27,68 +28,87 @@ module Language.Bracer.Parser where
              , TokenParsing
              , DeltaParsing
              )
-
-  -- would have preferred to call this ConstantParsing but I hate how overused  
-  -- the terms 'const' and 'constant' already are
-
+  
+  -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where
     parseLiteral :: m (Term Literal)
-
-  instance LiteralParsing BParser where 
+  
+  instance LiteralParsing CParser where 
     parseLiteral = choice 
       [ either iIntLit (iFltLit . fromFloatDigits) <$> naturalOrDouble <?> "number"
       , iChrLit <$> charLiteral <?> "character"
       , iStrLit <$> stringLiteral <?> "string literal"
       ]
-
-  -- should this be part of a type family with ExpressionParsing?
-  type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator
-
+  
+  -- Class for parsers that understand expressions. Note that we use a type family 
+  -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
   class (LiteralParsing m, Monad m) => ExpressionParsing m where
+    type ExpressionSig
     identifierStyle :: IdentifierStyle m
-    postfixTable :: OperatorTable m (Term ExpressionSig)
-    prefixTable :: OperatorTable m (Term ExpressionSig)
-    infixTable :: OperatorTable m (Term ExpressionSig)
-
-  instance ExpressionParsing BParser where
-    postfixTable = standardPostfixTable
-
-  standardPostfixTable :: OperatorTable BParser (Term ExpressionSig)
-  standardPostfixTable = 
-    [ [ E.Postfix parseCall ]
-    , [ E.Postfix parseIndex ]
-    , [ E.Postfix parseAccess ]
-    --, [ E.Postfix parsePostInc, E.Postfix parsePostDec ]
-    ]
-
-  infixl 1 <$$>
-  a <$$> b = (flip a) <$> b
-
-  parseIndex, parseCall, parseAccess :: (ExpressionParsing m) => m (Term ExpressionSig -> Term ExpressionSig)
-  parseIndex = iIndex <$$> brackets parseExpression
-  parseCall  = iCall  <$$> parens (commaSep parseExpression)
-
-  parseAccess = do
-    op <- choice 
-      [ iDot <$ dot
-      , iArrow <$ symbol "->"
+    parsePrefixOperator :: m (Term ExpressionSig)
+    parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
+    infixOperatorTable :: OperatorTable m (Term ExpressionSig)
+  
+  parseIdent :: (ExpressionParsing m) => m (Term Ident)
+  parseIdent = iIdent <$> Name <$> ident identifierStyle <?> "identifier"
+  
+  reservedOp = reserve identifierStyle
+  
+  
+  instance ExpressionParsing CParser where
+    -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
+    type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator
+    
+    identifierStyle = haskell98Idents
+    
+    parsePrefixOperator = choice 
+      [ iDec <$ reservedOp "--"
+      , iInc <$ reservedOp "++"
+      -- lookAhead $ iCast <$> parens typeName
+      , iRef <$ reservedOp "&"
+      , iDeref <$ reservedOp "*"
+      , iPos <$ reservedOp "+"
+      , iNeg <$ reservedOp "-"
+      , (iBitwise Neg) <$ reservedOp "~"
+      , iNot <$ reservedOp "!"
+      , iSizeOf <$ symbol "sizeof"
       ]
-    ident <- parseIdent
-    return (\x -> iAccess x op (deepInject ident))
-
-
-  parsePrimary :: (ExpressionParsing m) => m (Term ExpressionSig)
-  parsePrimary = choice 
+    
+    parsePostfixOperator = choice 
+      [ iIndex <$$> brackets parseExpression
+      , iCall  <$$> parens (commaSep parseExpression)
+      , parseAccessor
+      , iUnary <$$> (iPostInc <$ reservedOp "++")
+      , iUnary <$$> (iPostDec <$ reservedOp "--")
+      ] where
+        infixl 1 <$$>
+        a <$$> b = (flip a) <$> b
+        parseAccessor = do
+          op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
+          ident <- parseIdent
+          return (\x -> iAccess x op (deepInject ident))
+    
+    infixOperatorTable = []
+  
+  parsePrimaryExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePrimaryExpression = choice 
     [ deepInject <$> parseIdent
     , deepInject <$> parseLiteral
     , iParen     <$> parens parseExpression
     ]
-
-  parseIdent :: (ExpressionParsing m) => m (Term Ident)
-  parseIdent = iIdent <$> Name <$> ident identifierStyle <?> "identifier"
-
-  parseConstant :: (ExpressionParsing m) => m (Term ExpressionSig)
-  parseConstant = E.buildExpressionParser (postfixTable <> prefixTable <> infixTable) parsePrimary
-
+  
+  parsePostfixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePostfixExpression = do
+    subject <- parsePrimaryExpression
+    postfixes <- many parsePostfixOperator
+    return $ foldl (>>>) id postfixes subject
+  
+  parsePrefixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePrefixExpression = foldl (<<<) id <$> (many (iUnary <$> parsePrefixOperator)) <*> parsePostfixExpression
+  
+  parseInfixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parseInfixExpression = E.buildExpressionParser infixOperatorTable parsePrefixExpression
+  
   parseExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
-  parseExpression = parseConstant
+  parseExpression = parseInfixExpression
+  

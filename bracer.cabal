@@ -30,4 +30,5 @@ executable bracer
                      , GeneralizedNewtypeDeriving
                      , QuasiQuotes
                      , TemplateHaskell
+                     , TypeFamilies
                      , TypeOperators

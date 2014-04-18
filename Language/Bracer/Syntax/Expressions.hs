@@ -38,4 +38,4 @@ module Language.Bracer.Syntax.Expressions where
       }
     deriving (Eq, Show, Functor, Foldable, Traversable)
 
-  smartConstructors ''Expr
+  derive [ smartConstructors, makeShowF, makeEqF ] [ ''Expr ]
