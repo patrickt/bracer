@@ -7,7 +7,9 @@ module Language.Bracer.Parser where
   import Language.Bracer.Syntax.Identifiers
   import Language.Bracer.Syntax.Expressions
   import Language.Bracer.Syntax.Operators
+  import qualified Language.Bracer.Syntax.Types as C
 
+  import Data.ByteString (ByteString)
   import Data.Comp.Derive
   import Data.Scientific
   import Text.Trifecta hiding (try)
@@ -31,35 +33,55 @@ module Language.Bracer.Parser where
   
   -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where
-    parseLiteral :: m (Term Literal)
+    type LiteralSig :: * -> *
+    parseLiteral :: m (Term LiteralSig)
   
-  instance LiteralParsing CParser where 
+  instance LiteralParsing CParser where
+    type LiteralSig = Literal
     parseLiteral = choice 
       [ either iIntLit (iFltLit . fromFloatDigits) <$> naturalOrDouble <?> "number"
       , iChrLit <$> charLiteral <?> "character"
       , iStrLit <$> stringLiteral <?> "string literal"
       ]
   
+  class (TokenParsing m, Monad m) => IdentifierParsing m where
+    type IdentifierSig :: * -> *
+    -- type IdentifierRep
+    -- type IdentifierRep = ByteString
+    identifierStyle :: IdentifierStyle m
+    -- makeIdentifier :: IdentifierRep -> m (Term IdentifierSig)
+    makeIdentifier :: ByteString -> m (Term IdentifierSig)
+  
+  instance IdentifierParsing CParser where
+    type IdentifierSig = Ident
+    identifierStyle = haskell98Idents
+    makeIdentifier = return . iIdent <$> Name
+  
+  parseIdentifier :: (IdentifierParsing m) => m (Term IdentifierSig)
+  parseIdentifier = ident identifierStyle >>= makeIdentifier <?> "identifier"
+  
+  class (IdentifierParsing m) => TypeParsing m where
+    type SpecifierSig :: * -> *
+    parseSpecifier :: m (Term SpecifierSig)
+  
+  instance TypeParsing CParser where
+    type SpecifierSig = []
+    parseSpecifier = undefined
+  
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
-  class (LiteralParsing m, Monad m) => ExpressionParsing m where
-    type ExpressionSig
-    identifierStyle :: IdentifierStyle m
+  class (IdentifierParsing m, TypeParsing m, LiteralParsing m) => ExpressionParsing m where
+    type ExpressionSig :: * -> *
     parsePrefixOperator :: m (Term ExpressionSig)
     parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
     infixOperatorTable :: OperatorTable m (Term ExpressionSig)
   
-  parseIdent :: (ExpressionParsing m) => m (Term Ident)
-  parseIdent = iIdent <$> Name <$> ident identifierStyle <?> "identifier"
   
   reservedOp = reserve identifierStyle
-  
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
     type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator
-    
-    identifierStyle = haskell98Idents
     
     parsePrefixOperator = choice 
       [ iDec <$ reservedOp "--"
@@ -85,14 +107,14 @@ module Language.Bracer.Parser where
         a <$$> b = (flip a) <$> b
         parseAccessor = do
           op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
-          ident <- parseIdent
+          ident <- parseIdentifier
           return (\x -> iAccess x op (deepInject ident))
     
     infixOperatorTable = []
   
   parsePrimaryExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
   parsePrimaryExpression = choice 
-    [ deepInject <$> parseIdent
+    [ deepInject <$> parseIdentifier
     , deepInject <$> parseLiteral
     , iParen     <$> parens parseExpression
     ]
@@ -112,3 +134,14 @@ module Language.Bracer.Parser where
   parseExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
   parseExpression = parseInfixExpression
   
+  class (ExpressionParsing m) => DeclaratorParsing m where
+    type DeclaratorSig :: * -> *
+    parseDeclarator :: m (Term DeclarationSig)
+  
+  class (DeclaratorParsing m) => StatementParsing m where
+    type StatementSig :: * -> *
+    parseStatement :: m (Term (StatementSig :+: DeclaratorSig))
+  
+  class (StatementParsing m) => DeclarationParsing m where 
+    type DeclarationSig :: * -> *
+    parseDeclaration :: m (Term DeclarationSig)

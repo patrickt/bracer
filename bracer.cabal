@@ -28,6 +28,7 @@ executable bracer
                      , DeriveFoldable
                      , DeriveTraversable
                      , GeneralizedNewtypeDeriving
+                     , KindSignatures
                      , QuasiQuotes
                      , TemplateHaskell
                      , TypeFamilies
