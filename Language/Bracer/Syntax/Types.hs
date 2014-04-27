@@ -61,9 +61,12 @@ module Language.Bracer.Syntax.Types where
   data Enum a = Enum
   
   data Declaration a
-    = VariableDecl a (Maybe a)
-    | FunctionDecl a [a]
-    | ForwardDecl a
+    = VariableDecl a
+    | FunctionDecl a
     | MultipleDecl [a]
   
+  data Definition a
+    = VariableDefn a a
+    | FunctionDefn a [a]
+    | MultipleDefn [a]
   
