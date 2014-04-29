@@ -20,6 +20,9 @@ executable bracer
   build-depends:       base >=4.6 && <4.7
                      , bytestring == 0.10.4.*
                      , compdata == 0.7.0.1
+                     , hashable == 1.2.1.*
+                     , lens == 4.1.2
+                     , mtl == 2.1.2
                      , parsers == 0.11
                      , scientific == 0.2.0.*
                      , trifecta == 1.4.2.*
@@ -29,8 +32,11 @@ executable bracer
   default-extensions:  DeriveFunctor
                      , DeriveFoldable
                      , DeriveTraversable
+                     , FlexibleContexts
+                     , FlexibleInstances
                      , GeneralizedNewtypeDeriving
                      , KindSignatures
+                     , MultiParamTypeClasses
                      , QuasiQuotes
                      , TemplateHaskell
                      , TypeFamilies

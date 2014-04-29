@@ -3,11 +3,14 @@ module Language.Bracer.Backends.C.Parser where
   import Prelude (undefined)
   import Overture hiding (try)
   
+  import Control.Lens
+  import Language.Bracer.Backends.C.IdentifierStyle
   import Language.Bracer.Syntax
   import Language.Bracer.Parsing
   
-  import Language.Bracer.Backends.C.IdentifierStyle
-  
+  import Control.Monad.State
+  import Data.HashMap.Lazy (HashMap)
+  import qualified Data.HashMap.Lazy as M
   import Data.Scientific
   import Text.Trifecta hiding (try)
   import Text.Parser.Token.Style
@@ -15,7 +18,7 @@ module Language.Bracer.Backends.C.Parser where
   import qualified Language.Bracer.Backends.C.Types as C
   import qualified Text.Parser.Expression as E
   
-  newtype CParser a = CParser { runCParser :: Parser a }
+  newtype CParser a = CParser { unCParser :: StateT Environment Parser a }
     deriving ( Functor
              , Applicative
              , Alternative
@@ -24,7 +27,15 @@ module Language.Bracer.Backends.C.Parser where
              , Parsing
              , CharParsing
              , DeltaParsing
+             , MonadState Environment
              )
+  
+  data Environment = Environment
+    { _typedefTable :: HashMap Name (C.Typedef (Term SpecifierSig))
+    }
+  
+  runCParser :: CParser a -> Parser a
+  runCParser p = evalStateT (unCParser p) (Environment M.empty)
   
   instance TokenParsing CParser where
     someSpace = buildSomeSpaceParser (CParser someSpace) javaCommentStyle
@@ -61,7 +72,7 @@ module Language.Bracer.Backends.C.Parser where
     , endo C.iRestrict "restrict"
     , endo C.iVolatile "volatile"
     , endo C.iInline "inline"
-    ] where endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
+    ]
     
   parseTypeSpecifier :: CParser SpecifierTerm
   parseTypeSpecifier = choice 
@@ -78,11 +89,20 @@ module Language.Bracer.Backends.C.Parser where
     , endo C.iUnsigned "unsigned"
     , solo C.iBool "_Bool"
     , endo C.iComplex "_Complex"
-    ] 
+    , parseTypedef
+    ]
   
-  parseTypeName :: CParser (Term SpecifierSig)
+  parseTypedef :: CParser SpecifierTerm
+  parseTypedef = do
+    (Ident name) <- unTerm <$> parseIdentifier
+    table <- gets _typedefTable
+    case (M.lookup name table) of
+      Just val -> return $ Right $ (C._typedefChildType val)
+      Nothing -> empty
+  
+  parseTypeName :: (TypeParsing m) => m (Term SpecifierSig)
   parseTypeName = do
-    quals <- some (parseTypeSpecifier <|> parseTypeQualifier)
+    quals <- some parseSpecifier
     let (mods, typ) = partitionEithers quals
     let modifier = appEndo (mconcat mods)
     let typ' = if null typ then C.iInt else (head typ)
@@ -90,7 +110,7 @@ module Language.Bracer.Backends.C.Parser where
   
   instance TypeParsing CParser where
     type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef
-    parseSpecifier = undefined
+    parseSpecifier = choice [parseStorageClassSpecifier, parseTypeQualifier, parseTypeSpecifier]
   
   reservedOp = reserve identifierStyle
   

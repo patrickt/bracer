@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Language.Bracer.Syntax.Operators where
 
   import Prelude ()
