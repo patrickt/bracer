@@ -1,25 +1,19 @@
-module Language.Bracer.Parser where
-
+module Language.Bracer.Backends.C.Parser where
+  
   import Prelude (undefined)
   import Overture hiding (try)
-
-  import Language.Bracer.Syntax.Literals
-  import Language.Bracer.Syntax.Identifiers
-  import Language.Bracer.Syntax.Expressions
-  import Language.Bracer.Syntax.Operators
-  import qualified Language.Bracer.Backends.C.Types as C
-
-  import Data.ByteString (ByteString)
-  import Data.Comp.Derive
+  
+  import Language.Bracer.Syntax
+  import Language.Bracer.Parsing
+  
   import Data.Scientific
   import Text.Trifecta hiding (try)
-  import Text.Parser.Expression hiding (Operator (..))
   import Text.Parser.Token.Style
-
+  
+  import qualified Language.Bracer.Backends.C.Types as C
   import qualified Text.Parser.Expression as E
   
-  -- Parser for C99; will use this to illustrate assembling a curly-brace-language parser
-  newtype CParser a = CParser { unCParser :: Parser a }
+  newtype CParser a = CParser { runCParser :: Parser a }
     deriving ( Functor
              , Applicative
              , Alternative
@@ -31,11 +25,6 @@ module Language.Bracer.Parser where
              , DeltaParsing
              )
   
-  -- Class for parsers that understand literals
-  class (TokenParsing m) => LiteralParsing m where
-    type LiteralSig :: * -> *
-    parseLiteral :: m (Term LiteralSig)
-  
   instance LiteralParsing CParser where
     type LiteralSig = Literal
     parseLiteral = choice 
@@ -44,22 +33,10 @@ module Language.Bracer.Parser where
       , iStrLit <$> stringLiteral <?> "string literal"
       ]
   
-  class (TokenParsing m, Monad m) => IdentifierParsing m where
-    type IdentifierSig :: * -> *
-    identifierStyle :: IdentifierStyle m
-    makeIdentifier :: ByteString -> m (Term IdentifierSig)
-  
   instance IdentifierParsing CParser where
     type IdentifierSig = Ident
     identifierStyle = haskell98Idents
     makeIdentifier = return <$> iIdent <$> Name
-  
-  parseIdentifier :: (IdentifierParsing m) => m (Term IdentifierSig)
-  parseIdentifier = ident identifierStyle >>= makeIdentifier <?> "identifier"
-  
-  class (IdentifierParsing m) => TypeParsing m where
-    type SpecifierSig :: * -> *
-    parseSpecifier :: m (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
   
   parseStorageClassSpecifier :: CParser (Endo (Term SpecifierSig))
   parseStorageClassSpecifier = choice 
@@ -72,7 +49,7 @@ module Language.Bracer.Parser where
       endo fn name = (Endo fn) <$ reserve identifierStyle name
       typedef a = C.iTypedef a Anonymous
       
-  parseTypeQualifier :: CParser (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
+  parseTypeQualifier :: CParser SpecifierTerm
   parseTypeQualifier = choice 
     [ endo C.iConst "const"
     , endo C.iRestrict "restrict"
@@ -80,12 +57,14 @@ module Language.Bracer.Parser where
     , endo C.iInline "inline"
     ] where endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
     
-  parseTypeSpecifier :: CParser (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
+  parseTypeSpecifier :: CParser SpecifierTerm
   parseTypeSpecifier = choice 
     [ solo C.iVoid "void"
     , solo C.iChar "char"
     , endo C.iShort "short"
     , solo C.iInt "int"
+    , solo C.iInt128 "__int128_t"
+    , solo (C.iUnsigned C.iInt128) "__uint128_t"
     , endo C.iLong "long"
     , solo C.iFloat "float"
     , solo C.iDouble "double"
@@ -104,19 +83,10 @@ module Language.Bracer.Parser where
     let modifier = appEndo (mconcat mods)
     let typ' = if null typ then C.iInt else (head typ)
     return $ modifier typ'
-    
   
   instance TypeParsing CParser where
     type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef
     parseSpecifier = undefined
-  
-  -- Class for parsers that understand expressions. Note that we use a type family 
-  -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
-  class (IdentifierParsing m, TypeParsing m, LiteralParsing m) => ExpressionParsing m where
-    type ExpressionSig :: * -> *
-    parsePrefixOperator :: m (Term ExpressionSig)
-    parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
-    infixOperatorTable :: OperatorTable m (Term ExpressionSig)
   
   reservedOp = reserve identifierStyle
   
@@ -174,15 +144,3 @@ module Language.Bracer.Parser where
   
   parseExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
   parseExpression = parseInfixExpression
-  
-  class (ExpressionParsing m) => DeclaratorParsing m where
-    type DeclaratorSig :: * -> *
-    parseDeclarator :: m (Term DeclarationSig)
-  
-  class (DeclaratorParsing m) => StatementParsing m where
-    type StatementSig :: * -> *
-    parseStatement :: m (Term (StatementSig :+: DeclaratorSig))
-  
-  class (StatementParsing m) => DeclarationParsing m where 
-    type DeclarationSig :: * -> *
-    parseDeclaration :: m (Term DeclarationSig)

@@ -19,6 +19,7 @@ module Language.Bracer.Backends.C.Types where
     | Enum Name
     | Float
     | Int
+    | Int128
     | Struct Name
     | TypeOf a
     | Union Name
