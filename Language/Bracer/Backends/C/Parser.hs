@@ -6,6 +6,8 @@ module Language.Bracer.Backends.C.Parser where
   import Language.Bracer.Syntax
   import Language.Bracer.Parsing
   
+  import Language.Bracer.Backends.C.IdentifierStyle
+  
   import Data.Scientific
   import Text.Trifecta hiding (try)
   import Text.Parser.Token.Style
@@ -21,9 +23,11 @@ module Language.Bracer.Backends.C.Parser where
              , MonadPlus
              , Parsing
              , CharParsing
-             , TokenParsing
              , DeltaParsing
              )
+  
+  instance TokenParsing CParser where
+    someSpace = buildSomeSpaceParser (CParser someSpace) javaCommentStyle
   
   instance LiteralParsing CParser where
     type LiteralSig = Literal
@@ -35,10 +39,13 @@ module Language.Bracer.Backends.C.Parser where
   
   instance IdentifierParsing CParser where
     type IdentifierSig = Ident
-    identifierStyle = haskell98Idents
+    identifierStyle = c99Idents
     makeIdentifier = return <$> iIdent <$> Name
   
-  parseStorageClassSpecifier :: CParser (Endo (Term SpecifierSig))
+  endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
+  solo fn name = (Right fn) <$ reserve identifierStyle name
+  
+  parseStorageClassSpecifier :: CParser SpecifierTerm
   parseStorageClassSpecifier = choice 
     [ endo typedef "typedef"
     , endo C.iExtern "extern"
@@ -46,7 +53,6 @@ module Language.Bracer.Backends.C.Parser where
     , endo C.iAuto "auto"
     , endo C.iRegister "register"
     ] where
-      endo fn name = (Endo fn) <$ reserve identifierStyle name
       typedef a = C.iTypedef a Anonymous
       
   parseTypeQualifier :: CParser SpecifierTerm
@@ -72,9 +78,7 @@ module Language.Bracer.Backends.C.Parser where
     , endo C.iUnsigned "unsigned"
     , solo C.iBool "_Bool"
     , endo C.iComplex "_Complex"
-    ] where
-      endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
-      solo fn name = (Right fn) <$ reserve identifierStyle name
+    ] 
   
   parseTypeName :: CParser (Term SpecifierSig)
   parseTypeName = do
@@ -123,24 +127,25 @@ module Language.Bracer.Backends.C.Parser where
     
     infixOperatorTable = []
   
-  parsePrimaryExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePrimaryExpression :: CParser (Term ExpressionSig)
   parsePrimaryExpression = choice 
     [ deepInject <$> parseIdentifier
     , deepInject <$> parseLiteral
     , iParen     <$> parens parseExpression
     ]
   
-  parsePostfixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePostfixExpression :: CParser (Term ExpressionSig)
   parsePostfixExpression = do
     subject <- parsePrimaryExpression
     postfixes <- many parsePostfixOperator
     return $ foldl (>>>) id postfixes subject
   
-  parsePrefixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parsePrefixExpression :: CParser(Term ExpressionSig)
   parsePrefixExpression = foldl (<<<) id <$> (many (iUnary <$> parsePrefixOperator)) <*> parsePostfixExpression
   
-  parseInfixExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parseInfixExpression :: CParser (Term ExpressionSig)
   parseInfixExpression = E.buildExpressionParser infixOperatorTable parsePrefixExpression
   
-  parseExpression :: (ExpressionParsing m) => m (Term ExpressionSig)
+  parseExpression :: CParser (Term ExpressionSig)
   parseExpression = parseInfixExpression
+  

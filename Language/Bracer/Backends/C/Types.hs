@@ -85,3 +85,6 @@ module Language.Bracer.Backends.C.Types where
     , ''Variable
     , ''Declaration
     ]
+  
+  iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a
+  iUInt128 = iUnsigned iInt128

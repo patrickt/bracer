@@ -13,8 +13,9 @@ cabal-version:       >=1.10
 executable bracer
   main-is:             Main.hs
   other-modules:       Overture
-                     , Language.Bracer.Syntax.Literals
-                     , Language.Bracer.Parser
+                     , Language.Bracer.Backends.C
+                     , Language.Bracer.Syntax
+                     , Language.Bracer.Parsing
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.7
                      , bytestring == 0.10.4.*
@@ -22,6 +23,7 @@ executable bracer
                      , parsers == 0.11
                      , scientific == 0.2.0.*
                      , trifecta == 1.4.2.*
+                     , unordered-containers == 0.2.3.*
   -- hs-source-dirs:      
   default-language:    Haskell2010
   default-extensions:  DeriveFunctor
