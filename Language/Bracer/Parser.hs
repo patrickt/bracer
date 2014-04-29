@@ -7,7 +7,7 @@ module Language.Bracer.Parser where
   import Language.Bracer.Syntax.Identifiers
   import Language.Bracer.Syntax.Expressions
   import Language.Bracer.Syntax.Operators
-  import qualified Language.Bracer.Syntax.Types as C
+  import qualified Language.Bracer.Backends.C.Types as C
 
   import Data.ByteString (ByteString)
   import Data.Comp.Derive
@@ -46,26 +46,68 @@ module Language.Bracer.Parser where
   
   class (TokenParsing m, Monad m) => IdentifierParsing m where
     type IdentifierSig :: * -> *
-    -- type IdentifierRep
-    -- type IdentifierRep = ByteString
     identifierStyle :: IdentifierStyle m
-    -- makeIdentifier :: IdentifierRep -> m (Term IdentifierSig)
     makeIdentifier :: ByteString -> m (Term IdentifierSig)
   
   instance IdentifierParsing CParser where
     type IdentifierSig = Ident
     identifierStyle = haskell98Idents
-    makeIdentifier = return . iIdent <$> Name
+    makeIdentifier = return <$> iIdent <$> Name
   
   parseIdentifier :: (IdentifierParsing m) => m (Term IdentifierSig)
   parseIdentifier = ident identifierStyle >>= makeIdentifier <?> "identifier"
   
   class (IdentifierParsing m) => TypeParsing m where
     type SpecifierSig :: * -> *
-    parseSpecifier :: m (Term SpecifierSig)
+    parseSpecifier :: m (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
+  
+  parseStorageClassSpecifier :: CParser (Endo (Term SpecifierSig))
+  parseStorageClassSpecifier = choice 
+    [ endo typedef "typedef"
+    , endo C.iExtern "extern"
+    , endo C.iStatic "static"
+    , endo C.iAuto "auto"
+    , endo C.iRegister "register"
+    ] where
+      endo fn name = (Endo fn) <$ reserve identifierStyle name
+      typedef a = C.iTypedef a Anonymous
+      
+  parseTypeQualifier :: CParser (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
+  parseTypeQualifier = choice 
+    [ endo C.iConst "const"
+    , endo C.iRestrict "restrict"
+    , endo C.iVolatile "volatile"
+    , endo C.iInline "inline"
+    ] where endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
+    
+  parseTypeSpecifier :: CParser (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
+  parseTypeSpecifier = choice 
+    [ solo C.iVoid "void"
+    , solo C.iChar "char"
+    , endo C.iShort "short"
+    , solo C.iInt "int"
+    , endo C.iLong "long"
+    , solo C.iFloat "float"
+    , solo C.iDouble "double"
+    , endo C.iSigned "signed"
+    , endo C.iUnsigned "unsigned"
+    , solo C.iBool "_Bool"
+    , endo C.iComplex "_Complex"
+    ] where
+      endo fn name = ((Left . Endo) fn) <$ reserve identifierStyle name
+      solo fn name = (Right fn) <$ reserve identifierStyle name
+  
+  parseTypeName :: CParser (Term SpecifierSig)
+  parseTypeName = do
+    quals <- some (parseTypeSpecifier <|> parseTypeQualifier)
+    let (mods, typ) = partitionEithers quals
+    let modifier = appEndo (mconcat mods)
+    let typ' = if null typ then C.iInt else (head typ)
+    return $ modifier typ'
+    
   
   instance TypeParsing CParser where
-    type SpecifierSig = []
+    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef
     parseSpecifier = undefined
   
   -- Class for parsers that understand expressions. Note that we use a type family 
@@ -75,7 +117,6 @@ module Language.Bracer.Parser where
     parsePrefixOperator :: m (Term ExpressionSig)
     parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
     infixOperatorTable :: OperatorTable m (Term ExpressionSig)
-  
   
   reservedOp = reserve identifierStyle
   

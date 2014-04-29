@@ -7,8 +7,10 @@ module Language.Bracer.Syntax.Identifiers where
 
   import Data.ByteString (ByteString)
 
-  newtype Name = Name { getName :: ByteString } 
-    deriving (Eq, Show, IsString)
+  data Name = Name ByteString | Anonymous
+    deriving (Eq, Show)
+    
+  instance IsString Name where fromString = Name . fromString
 
   newtype Ident a = Ident Name 
     deriving (Eq, Show, Functor, Foldable, Traversable)
