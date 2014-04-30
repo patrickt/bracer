@@ -16,7 +16,7 @@ module Language.Bracer.Syntax.Identifiers where
   
   instance Hashable Name where
     hashWithSalt s (Name n) = hashWithSalt s n
-    hash Anonymous = hash ()
+    hashWithSalt s Anonymous = hashWithSalt s (hash ())
   
   makePrisms ''Name
     

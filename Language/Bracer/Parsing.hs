@@ -24,11 +24,10 @@ module Language.Bracer.Parsing where
   parseIdentifier :: (IdentifierParsing m) => m (Term IdentifierSig)
   parseIdentifier = ident identifierStyle >>= makeIdentifier <?> "identifier"
   
-  type SpecifierTerm = (Either (Endo (Term SpecifierSig)) (Term SpecifierSig))
-  
   class (IdentifierParsing m) => TypeParsing m where
     type SpecifierSig :: * -> *
-    parseSpecifier :: m SpecifierTerm
+    parseModifier :: m (Endo (Term SpecifierSig))
+    parseTerminator :: m (Term (SpecifierSig)) 
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
