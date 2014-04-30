@@ -69,10 +69,14 @@ module Language.Bracer.Backends.C.Types where
     } deriving (Functor)
   
   data Declaration a
-    = VariableDecl a (Maybe a)
-    | FunctionDecl a [a]
-    | ForwardDecl a
+    = VariableDecl a
+    | FunctionDecl a
     | MultipleDecl [a]
+    deriving (Functor)
+
+  data Definition a
+    = VariableDefn a a
+    | FunctionDefn a [a]
     deriving (Functor)
   
   derive 
@@ -84,6 +88,7 @@ module Language.Bracer.Backends.C.Types where
     , ''Composite
     , ''Variable
     , ''Declaration
+    , ''Definition
     ]
   
   iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a
