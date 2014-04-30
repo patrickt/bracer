@@ -64,14 +64,16 @@ module Language.Bracer.Backends.C.Parser where
   solo fn name = fn <$ reserve identifierStyle name
 
   
-  parseTypeName :: (TypeParsing m) => m (Term SpecifierSig)
+  parseTypeName :: CParser (Term SpecifierSig)
   parseTypeName = do
     specs <- some ((Left <$> parseModifier) <|> (Right <$> parseTerminator))
+    ptrs <- many parsePointers
     let (mods, terminals) = partitionEithers specs
     let modifier = appEndo (mconcat mods)
+    let pointerifier = appEndo (mconcat ptrs)
     -- TODO: dropping multiple terminals on the floor
     let typ' = if null terminals then C.iInt else (head terminals)
-    return $ modifier typ'
+    return $ pointerifier $ modifier typ'
 
   instance TypeParsing CParser where
     type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef
@@ -90,7 +92,6 @@ module Language.Bracer.Backends.C.Parser where
       , endo C.iSigned "signed"
       , endo C.iUnsigned "unsigned"
       , endo C.iComplex "_Complex"
-      , parsePointers
       ] where
         typedef a = C.iTypedef a Anonymous
     parseTerminator = choice 
@@ -106,12 +107,12 @@ module Language.Bracer.Backends.C.Parser where
       ]
 
   parsePointers :: CParser (Endo (Term SpecifierSig))
-  parsePointers = mconcat <$> some ptrQuals where
-    ptrQuals :: CParser (Endo (Term SpecifierSig))
-    ptrQuals = do
+  parsePointers = mconcat <$> some pointer where 
+    pointer = do
       ptr <- endo C.iPointer "*"
       quals <- many parseModifier
-      return $ mconcat (ptr : quals)
+      let ordered = reverse quals ++ [ptr]
+      return $ getDual $ mconcat $ Dual <$> ordered
   
   parseTypedef :: CParser (Term SpecifierSig)
   parseTypedef = do
