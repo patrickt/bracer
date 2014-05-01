@@ -10,6 +10,7 @@ module Language.Bracer.Backends.C.Types where
   import Data.Functor
   import Overture hiding (Char, Bool, Float, Double)
   import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Variables
   
   data BaseType a
     = Bool
@@ -29,7 +30,7 @@ module Language.Bracer.Backends.C.Types where
     deriving (Functor)
   
   data ModifiedType a 
-    = Array a
+    = Array (Maybe a) a
     | Auto a
     | Complex a
     | Const a
@@ -62,11 +63,12 @@ module Language.Bracer.Backends.C.Types where
     , _compositeName :: Maybe Name
     , _compositeMembers :: [a]
     } deriving (Functor)
-  
-  data Variable a = Variable
-    { _variableName :: Name
-    , _variableType :: a
-    } deriving (Functor)
+    
+  data Function a = Function
+    { _functionName :: Name
+    , _functionReturnType :: a
+    , _functionParameters :: [a]
+    }
   
   data Declaration a
     = VariableDecl a
@@ -86,7 +88,6 @@ module Language.Bracer.Backends.C.Types where
     , ''Type
     , ''Typedef
     , ''Composite
-    , ''Variable
     , ''Declaration
     , ''Definition
     ]

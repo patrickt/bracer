@@ -62,21 +62,9 @@ module Language.Bracer.Backends.C.Parser where
 
   solo :: Term SpecifierSig -> String -> CParser (Term SpecifierSig)
   solo fn name = fn <$ reserve identifierStyle name
-
   
-  parseTypeName :: CParser (Term SpecifierSig)
-  parseTypeName = do
-    specs <- some ((Left <$> parseModifier) <|> (Right <$> parseTerminator))
-    ptrs <- many parsePointers
-    let (mods, terminals) = partitionEithers specs
-    let modifier = appEndo (mconcat mods)
-    let pointerifier = appEndo (mconcat ptrs)
-    -- TODO: dropping multiple terminals on the floor
-    let typ' = if null terminals then C.iInt else (head terminals)
-    return $ pointerifier $ modifier typ'
-
   instance TypeParsing CParser where
-    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef
+    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Variable
     parseModifier = choice 
       [ endo typedef "typedef"
       , endo C.iExtern "extern"
@@ -94,7 +82,7 @@ module Language.Bracer.Backends.C.Parser where
       , endo C.iComplex "_Complex"
       ] where
         typedef a = C.iTypedef a Anonymous
-    parseTerminator = choice 
+    parseRootType = choice 
       [ solo C.iVoid "void"
       , solo C.iChar "char"
       , solo C.iInt "int"
@@ -105,10 +93,12 @@ module Language.Bracer.Backends.C.Parser where
       , solo C.iBool "_Bool"
       , parseTypedef
       ]
+    defaultRootType = return C.iInt
+    parseDerived = parsePointers
 
   parsePointers :: CParser (Endo (Term SpecifierSig))
   parsePointers = mconcat <$> some pointer where 
-    pointer = do
+    pointer = do 
       ptr <- endo C.iPointer "*"
       quals <- many parseModifier
       let ordered = reverse quals ++ [ptr]
@@ -121,6 +111,19 @@ module Language.Bracer.Backends.C.Parser where
     case (M.lookup name table) of
       Just val -> return $ (C._typedefChildType val)
       Nothing -> empty
+    
+  parseTypeName :: CParser (Term SpecifierSig)
+  parseTypeName = do
+    specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
+    ptrs <- many parseDerived
+    let (mods, terminals) = partitionEithers specs
+    let modifier = appEndo (mconcat mods)
+    let pointerifier = appEndo (mconcat ptrs)
+    -- TODO: dropping multiple terminals on the floor
+    def <- defaultRootType
+    let root = if null terminals then def else (head terminals)
+    return $ pointerifier $ modifier root
+  
   
   reservedOp = reserve identifierStyle
   
