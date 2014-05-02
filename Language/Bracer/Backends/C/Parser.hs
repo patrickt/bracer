@@ -3,7 +3,7 @@ module Language.Bracer.Backends.C.Parser where
   import Prelude (undefined)
   import Overture hiding (try)
   
-  import Control.Lens
+  import Data.Default
   import Language.Bracer.Backends.C.IdentifierStyle
   import Language.Bracer.Syntax
   import Language.Bracer.Parsing
@@ -18,7 +18,7 @@ module Language.Bracer.Backends.C.Parser where
   import qualified Language.Bracer.Backends.C.Types as C
   import qualified Text.Parser.Expression as E
   
-  newtype CParser a = CParser { unCParser :: StateT Environment Parser a }
+  newtype CParser a = CParser (StateT Environment Parser a)
     deriving ( Functor
              , Applicative
              , Alternative
@@ -34,12 +34,11 @@ module Language.Bracer.Backends.C.Parser where
     { _typedefTable :: HashMap Name (C.Typedef (Term SpecifierSig))
     }
 
-  instance Monoid Environment where
-    mempty = Environment mempty
-    mappend a b = Environment ((_typedefTable a) `mappend` (_typedefTable b))
+  instance Default Environment where
+    def = Environment mempty
   
-  runCParser :: CParser a -> Parser a
-  runCParser p = evalStateT (unCParser p) (Environment M.empty)
+  unCParser :: CParser a -> Parser a
+  unCParser (CParser p) = evalStateT p def
   
   instance TokenParsing CParser where
     someSpace = buildSomeSpaceParser (CParser someSpace) javaCommentStyle
@@ -55,7 +54,8 @@ module Language.Bracer.Backends.C.Parser where
   instance IdentifierParsing CParser where
     type IdentifierSig = Ident
     identifierStyle = c99Idents
-    makeIdentifier = return <$> iIdent <$> Name
+    parseIdentifier = iIdent <$> parseName
+    
   
   endo :: (Term SpecifierSig -> Term SpecifierSig) -> String -> CParser (Endo (Term SpecifierSig))
   endo fn name = (Endo fn) <$ reserve identifierStyle name
@@ -65,7 +65,7 @@ module Language.Bracer.Backends.C.Parser where
   
   parseDeclarator :: CParser (Endo (Term SpecifierSig))
   parseDeclarator = do
-    ptrs <- parseOptPointers
+    ptrs <- mconcat <$> many parsePointer
     let ptrFn = appEndo ptrs
     body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
     append <- mconcat <$> many parseAppendix
@@ -80,9 +80,6 @@ module Language.Bracer.Backends.C.Parser where
     let modifier = appEndo (mconcat mods)
     let typ' = if null terminals then C.iInt else (head terminals)
     return $ modifier typ'
-  
-  parseName :: CParser Name
-  parseName = Name <$> ident identifierStyle
   
   parseAppendix :: CParser (Endo (Term SpecifierSig))
   parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
@@ -113,7 +110,7 @@ module Language.Bracer.Backends.C.Parser where
     , endo C.iSigned "signed"
     , endo C.iUnsigned "unsigned"
     , endo C.iComplex "_Complex"
-    , parsePointers
+    , mconcat <$> some parsePointer
     ] where
       typedef a = C.iTypedef a Anonymous
   parseRootType = choice 
@@ -133,7 +130,7 @@ module Language.Bracer.Backends.C.Parser where
     
     parseTypeName = do
       specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
-      ptrs <- many parsePointers
+      ptrs <- many parsePointer
       let (mods, terminals) = partitionEithers specs
       let modifier = appEndo (mconcat mods)
       let pointerifier = appEndo (mconcat ptrs)
@@ -146,18 +143,9 @@ module Language.Bracer.Backends.C.Parser where
       declarator <- parseDeclarator
       return $ (appEndo declarator) preamble
 
-  parseOptPointers :: CParser (Endo (Term SpecifierSig))
-  parseOptPointers = mconcat <$> many pointer where 
-    pointer = do
-      ptr <- Endo C.iPointer <$ (optional someSpace *> char '*')
-      quals <- many parseModifier
-      let ordered = reverse quals ++ [ptr]
-      return $ getDual $ mconcat $ Dual <$> ordered
-
-  parsePointers :: CParser (Endo (Term SpecifierSig))
-  parsePointers = mconcat <$> some pointer where 
-    pointer = do 
-      ptr <- endo C.iPointer "*"
+  parsePointer :: CParser (Endo (Term SpecifierSig))
+  parsePointer = do 
+      ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
       quals <- many parseModifier
       let ordered = reverse quals ++ [ptr]
       return $ getDual $ mconcat $ Dual <$> ordered

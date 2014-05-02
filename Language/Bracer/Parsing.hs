@@ -1,15 +1,13 @@
 module Language.Bracer.Parsing where
 
-  import Prelude (undefined)
-  import Overture hiding (try)
-
-  import Data.ByteString (ByteString)
-  import Data.Comp.Derive
-  import Data.Scientific
+  import Prelude ()
+  import Overture
   
   import Text.Parser.Combinators
   import Text.Parser.Token
   import qualified Text.Parser.Expression as E
+  
+  import Language.Bracer.Syntax.Identifiers
   
   -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where
@@ -18,17 +16,15 @@ module Language.Bracer.Parsing where
   
   class (TokenParsing m, Monad m) => IdentifierParsing m where
     type IdentifierSig :: * -> *
-    identifierStyle :: IdentifierStyle m
-    makeIdentifier :: ByteString -> m (Term IdentifierSig)
-  
-  parseIdentifier :: (IdentifierParsing m) => m (Term IdentifierSig)
-  parseIdentifier = ident identifierStyle >>= makeIdentifier <?> "identifier"
+    identifierStyle    :: IdentifierStyle m
+    parseIdentifier    :: m (Term IdentifierSig)
+    parseName          :: m Name
+    parseName = Name <$> ident identifierStyle
   
   class (IdentifierParsing m) => TypeParsing m where
     type SpecifierSig :: * -> *
     parseVariable :: m (Term SpecifierSig)
     parseTypeName :: m (Term SpecifierSig)
-    
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
