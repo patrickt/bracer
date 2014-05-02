@@ -26,10 +26,8 @@ module Language.Bracer.Parsing where
   
   class (IdentifierParsing m) => TypeParsing m where
     type SpecifierSig :: * -> *
-    parseModifier :: m (Endo (Term SpecifierSig))
-    parseRootType :: m (Term (SpecifierSig))
-    defaultRootType :: m (Term SpecifierSig)
-    parseDerived :: m (Endo (Term SpecifierSig))
+    parseVariable :: m (Term SpecifierSig)
+    parseTypeName :: m (Term SpecifierSig)
     
   
   -- Class for parsers that understand expressions. Note that we use a type family 
@@ -42,7 +40,7 @@ module Language.Bracer.Parsing where
   
   class (ExpressionParsing m) => DeclaratorParsing m where
     type DeclaratorSig :: * -> *
-    parseDeclarator :: m (Term DeclarationSig)
+    parseDeclarator' :: m (Term DeclarationSig)
   
   class (DeclaratorParsing m) => StatementParsing m where
     type StatementSig :: * -> *

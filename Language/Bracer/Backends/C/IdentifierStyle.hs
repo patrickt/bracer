@@ -6,7 +6,7 @@ module Language.Bracer.Backends.C.IdentifierStyle where
   import qualified Data.HashSet as HashSet
   
   c99Idents :: TokenParsing m => IdentifierStyle m
-  c99Idents = emptyOps 
+  c99Idents = haskellIdents 
     { _styleReserved = HashSet.fromList 
       [ "->"
       , "++"

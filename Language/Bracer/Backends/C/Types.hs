@@ -63,12 +63,12 @@ module Language.Bracer.Backends.C.Types where
     , _compositeName :: Maybe Name
     , _compositeMembers :: [a]
     } deriving (Functor)
-    
+  
   data Function a = Function
     { _functionName :: Name
     , _functionReturnType :: a
     , _functionParameters :: [a]
-    }
+    } deriving (Functor)
   
   data Declaration a
     = VariableDecl a
@@ -90,6 +90,7 @@ module Language.Bracer.Backends.C.Types where
     , ''Composite
     , ''Declaration
     , ''Definition
+    , ''Function
     ]
   
   iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a

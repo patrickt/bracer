@@ -12,7 +12,7 @@ module Language.Bracer.Backends.C.Parser where
   import Data.HashMap.Lazy (HashMap)
   import qualified Data.HashMap.Lazy as M
   import Data.Scientific
-  import Text.Trifecta hiding (try)
+  import Text.Trifecta
   import Text.Parser.Token.Style
   
   import qualified Language.Bracer.Backends.C.Types as C
@@ -63,38 +63,96 @@ module Language.Bracer.Backends.C.Parser where
   solo :: Term SpecifierSig -> String -> CParser (Term SpecifierSig)
   solo fn name = fn <$ reserve identifierStyle name
   
+  parseDeclarator :: CParser (Endo (Term SpecifierSig))
+  parseDeclarator = do
+    ptrs <- parseOptPointers
+    let ptrFn = appEndo ptrs
+    body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
+    append <- mconcat <$> many parseAppendix
+    return $ Endo $ case body of
+      (Left name) -> iVariable name . ptrFn
+      (Right dec) -> appEndo dec . appEndo append . ptrFn
+  
+  parseSpecifierList :: CParser (Term SpecifierSig)
+  parseSpecifierList = do
+    specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
+    let (mods, terminals) = partitionEithers specs
+    let modifier = appEndo (mconcat mods)
+    let typ' = if null terminals then C.iInt else (head terminals)
+    return $ modifier typ'
+  
+  parseName :: CParser Name
+  parseName = Name <$> ident identifierStyle
+  
+  parseAppendix :: CParser (Endo (Term SpecifierSig))
+  parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
+  
+  instance Show (Endo a) where show _ = "<endofunctor>"
+  
+  parseFunctionPostamble :: CParser (Endo (Term SpecifierSig))
+  parseFunctionPostamble = do
+    funcs <- parens (parseVariable `sepBy` comma)
+    return (Endo $ \x -> C.iFunction Anonymous x funcs)
+  
+  parseArrayPostamble = do
+    bracks <- brackets (optional parseLiteral)
+    return $ Endo $ C.iArray (deepInject <$> bracks)
+  
+  parseModifier = choice 
+    [ endo typedef "typedef"
+    , endo C.iExtern "extern"
+    , endo C.iStatic "static"
+    , endo C.iAuto "auto"
+    , endo C.iRegister "register"
+    , endo C.iShort "short"
+    , endo C.iConst "const"
+    , endo C.iRestrict "restrict"
+    , endo C.iVolatile "volatile"
+    , endo C.iInline "inline"
+    , endo C.iLong "long"
+    , endo C.iSigned "signed"
+    , endo C.iUnsigned "unsigned"
+    , endo C.iComplex "_Complex"
+    , parsePointers
+    ] where
+      typedef a = C.iTypedef a Anonymous
+  parseRootType = choice 
+    [ solo C.iVoid "void"
+    , solo C.iChar "char"
+    , solo C.iInt "int"
+    , solo C.iInt128 "__int128_t"
+    , solo (C.iUnsigned C.iInt128) "__uint128_t"
+    , solo C.iFloat "float"
+    , solo C.iDouble "double"
+    , solo C.iBool "_Bool"
+    , parseTypedef <?> "typedef"
+    ]
+
   instance TypeParsing CParser where
-    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Variable
-    parseModifier = choice 
-      [ endo typedef "typedef"
-      , endo C.iExtern "extern"
-      , endo C.iStatic "static"
-      , endo C.iAuto "auto"
-      , endo C.iRegister "register"
-      , endo C.iShort "short"
-      , endo C.iConst "const"
-      , endo C.iRestrict "restrict"
-      , endo C.iVolatile "volatile"
-      , endo C.iInline "inline"
-      , endo C.iLong "long"
-      , endo C.iSigned "signed"
-      , endo C.iUnsigned "unsigned"
-      , endo C.iComplex "_Complex"
-      ] where
-        typedef a = C.iTypedef a Anonymous
-    parseRootType = choice 
-      [ solo C.iVoid "void"
-      , solo C.iChar "char"
-      , solo C.iInt "int"
-      , solo C.iInt128 "__int128_t"
-      , solo (C.iUnsigned C.iInt128) "__uint128_t"
-      , solo C.iFloat "float"
-      , solo C.iDouble "double"
-      , solo C.iBool "_Bool"
-      , parseTypedef
-      ]
-    defaultRootType = return C.iInt
-    parseDerived = parsePointers
+    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable
+    
+    parseTypeName = do
+      specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
+      ptrs <- many parsePointers
+      let (mods, terminals) = partitionEithers specs
+      let modifier = appEndo (mconcat mods)
+      let pointerifier = appEndo (mconcat ptrs)
+      -- TODO: dropping multiple terminals on the floor
+      let typ' = if null terminals then C.iInt else (head terminals)
+      return $ pointerifier $ modifier typ'
+    
+    parseVariable = do
+      preamble <- parseSpecifierList
+      declarator <- parseDeclarator
+      return $ (appEndo declarator) preamble
+
+  parseOptPointers :: CParser (Endo (Term SpecifierSig))
+  parseOptPointers = mconcat <$> many pointer where 
+    pointer = do
+      ptr <- Endo C.iPointer <$ (optional someSpace *> char '*')
+      quals <- many parseModifier
+      let ordered = reverse quals ++ [ptr]
+      return $ getDual $ mconcat $ Dual <$> ordered
 
   parsePointers :: CParser (Endo (Term SpecifierSig))
   parsePointers = mconcat <$> some pointer where 
@@ -106,23 +164,11 @@ module Language.Bracer.Backends.C.Parser where
   
   parseTypedef :: CParser (Term SpecifierSig)
   parseTypedef = do
-    (Ident name) <- unTerm <$> parseIdentifier
+    (Ident name) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
     case (M.lookup name table) of
       Just val -> return $ (C._typedefChildType val)
       Nothing -> empty
-    
-  parseTypeName :: CParser (Term SpecifierSig)
-  parseTypeName = do
-    specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
-    ptrs <- many parseDerived
-    let (mods, terminals) = partitionEithers specs
-    let modifier = appEndo (mconcat mods)
-    let pointerifier = appEndo (mconcat ptrs)
-    -- TODO: dropping multiple terminals on the floor
-    def <- defaultRootType
-    let root = if null terminals then def else (head terminals)
-    return $ pointerifier $ modifier root
   
   
   reservedOp = reserve identifierStyle
