@@ -63,6 +63,13 @@ module Language.Bracer.Backends.C.Parser where
   solo :: Term SpecifierSig -> String -> CParser (Term SpecifierSig)
   solo fn name = fn <$ reserve identifierStyle name
   
+  -- class (IdentifierParsing m, LiteralParsing m) => CTypeParsing m where
+  --   type CTypeSig :: * -> *
+  --   parsePreamble :: m (Term CTypeSig)
+  --   parsePointer :: m (Endo (Term CTypeSig))
+  --   parseDeclarator :: m (Endo (Term CTypeSig))
+  --   parseAppendix :: m (Endo (Term CTypeSig))
+  
   parseDeclarator :: CParser (Endo (Term SpecifierSig))
   parseDeclarator = do
     ptrs <- mconcat <$> many parsePointer
@@ -78,6 +85,7 @@ module Language.Bracer.Backends.C.Parser where
     specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
     let (mods, terminals) = partitionEithers specs
     let modifier = appEndo (mconcat mods)
+    -- TODO: dropping multiple terminals on the floor
     let typ' = if null terminals then C.iInt else (head terminals)
     return $ modifier typ'
   
@@ -129,14 +137,9 @@ module Language.Bracer.Backends.C.Parser where
     type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable
     
     parseTypeName = do
-      specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
-      ptrs <- many parsePointer
-      let (mods, terminals) = partitionEithers specs
-      let modifier = appEndo (mconcat mods)
-      let pointerifier = appEndo (mconcat ptrs)
-      -- TODO: dropping multiple terminals on the floor
-      let typ' = if null terminals then C.iInt else (head terminals)
-      return $ pointerifier $ modifier typ'
+      specs <- parseSpecifierList
+      ptrs <- mconcat <$> many parsePointer
+      return $ appEndo ptrs $ specs
     
     parseVariable = do
       preamble <- parseSpecifierList

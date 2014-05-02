@@ -21,7 +21,7 @@ module Language.Bracer.Parsing where
     parseName          :: m Name
     parseName = Name <$> ident identifierStyle
   
-  class (IdentifierParsing m) => TypeParsing m where
+  class (IdentifierParsing m, LiteralParsing m) => TypeParsing m where
     type SpecifierSig :: * -> *
     parseVariable :: m (Term SpecifierSig)
     parseTypeName :: m (Term SpecifierSig)
