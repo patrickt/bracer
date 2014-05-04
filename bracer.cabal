@@ -42,6 +42,11 @@ library
   exposed-modules:     Language.Bracer
                      , Language.Bracer.Parsing
                      , Language.Bracer.Syntax
+                     , Language.Bracer.Syntax.Expressions
+                     , Language.Bracer.Syntax.Identifiers
+                     , Language.Bracer.Syntax.Literals
+                     , Language.Bracer.Syntax.Operators
+                     , Language.Bracer.Syntax.Variables
                      , Language.Bracer.Backends.C
                      , Language.Bracer.Backends.C.IdentifierStyle
                      , Language.Bracer.Backends.C.Parser
@@ -49,3 +54,41 @@ library
 
   ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
   other-modules:       Overture
+
+executable test
+  build-depends:       base >=4.6 && <4.7
+                    , bracer
+                    , bytestring == 0.10.4.*
+                    , compdata == 0.7.0.1
+                    , hashable == 1.2.1.*
+                    , data-default == 0.5.*
+                    , lens == 4.1.2
+                    , mtl == 2.1.2
+                    , parsers == 0.11
+                    , scientific == 0.2.0.*
+                    , trifecta == 1.4.2.*
+                    , unordered-containers == 0.2.*
+                    , hspec == 1.9.*
+                    , HUnit == 1.2.5.*
+
+  default-language:    Haskell2010
+
+  default-extensions:  DeriveFunctor
+                     , DeriveFoldable
+                     , DeriveGeneric
+                     , DeriveTraversable
+                     , FlexibleContexts
+                     , FlexibleInstances
+                     , GeneralizedNewtypeDeriving
+                     , KindSignatures
+                     , MultiParamTypeClasses
+                     , QuasiQuotes
+                     , TemplateHaskell
+                     , TypeFamilies
+                     , TypeOperators
+
+  main-is:              Test.hs
+
+  ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
+  other-modules:       Overture
+                
