@@ -9,6 +9,8 @@ module Language.Bracer.Backends.C.Syntax where
   import Data.Comp.Derive
   import Overture hiding (Char, Bool, Float, Double)
   import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Lenses
+  import Control.Lens
   
   data BaseType a
     = Bool
@@ -58,7 +60,7 @@ module Language.Bracer.Backends.C.Syntax where
   
   data Composite a = Composite
     { _compositeKind :: a
-    , _compositeName :: Maybe Name
+    , _compositeName :: Name
     , _compositeMembers :: [a]
     } deriving (Functor)
   
@@ -107,6 +109,14 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Function
     , ''Statement
     ]
+  
+  derive [ makeLenses ] [ ''Function, ''Composite ]
+  
+  instance HasName (Function a) where
+    name = functionName
+    
+  instance HasName (Composite a) where
+    name = compositeName
   
   iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a
   iUInt128 = iUnsigned iInt128
