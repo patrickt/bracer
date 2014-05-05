@@ -26,3 +26,4 @@ module Language.Bracer.Syntax.Identifiers where
     deriving (Eq, Show, Functor, Foldable, Traversable)
 
   derive [ smartConstructors, makeShowF, makeEqF, makeWrapped, makePrisms ] [ ''Ident ]
+  

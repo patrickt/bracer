@@ -44,6 +44,7 @@ library
                      , Language.Bracer.Syntax
                      , Language.Bracer.Syntax.Expressions
                      , Language.Bracer.Syntax.Identifiers
+                     , Language.Bracer.Syntax.Lenses
                      , Language.Bracer.Syntax.Literals
                      , Language.Bracer.Syntax.Operators
                      , Language.Bracer.Syntax.Variables
