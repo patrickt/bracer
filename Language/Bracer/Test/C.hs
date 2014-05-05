@@ -37,6 +37,9 @@ module Language.Bracer.Test.C (tests) where
     describe "statement parser" $ do
       it "parses break statements" $
         (runCParser parseStatement "break") `shouldParseAs` (iBreak :: Term (ExpressionSig :+: StatementSig))
+        
+      it "parses valid default statements statements" $
+        (runCParser parseStatement "default: a") `shouldParseAs` (iDefault (iIdent (Name "a")) :: Term (ExpressionSig :+: StatementSig))
       
       
       
