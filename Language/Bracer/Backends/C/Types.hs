@@ -7,10 +7,8 @@ module Language.Bracer.Backends.C.Types where
   
   import Prelude ()
   import Data.Comp.Derive
-  import Data.Functor
   import Overture hiding (Char, Bool, Float, Double)
   import Language.Bracer.Syntax.Identifiers
-  import Language.Bracer.Syntax.Variables
   
   data BaseType a
     = Bool

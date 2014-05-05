@@ -3,7 +3,6 @@ module Language.Bracer.Parsing where
   import Prelude ()
   import Overture
   
-  import Text.Parser.Combinators
   import Text.Parser.Token
   import qualified Text.Parser.Expression as E
   

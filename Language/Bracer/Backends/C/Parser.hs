@@ -195,8 +195,8 @@ module Language.Bracer.Backends.C.Parser where
         a <$$> b = (flip a) <$> b
         parseAccessor = do
           op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
-          ident <- parseIdentifier
-          return (\x -> iAccess x op (deepInject ident))
+          name <- deepInject <$> parseIdentifier
+          return (\x -> iAccess x op name)
     
     infixOperatorTable = []
   

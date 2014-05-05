@@ -8,7 +8,9 @@ module Overture
   -- Haskell 98 stuff is easier to get at through the Prelude 
   -- than through the GHC-specific modules
   import Prelude as X ( Bounded (..)
+                      , Double
                       , Enum (..)
+                      , Float
                       , Floating (..)
                       , Fractional (..)
                       , Integral (..)
