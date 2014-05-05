@@ -165,22 +165,22 @@ module Language.Bracer.Backends.C.Parser where
       Nothing -> empty
   
   
-  reservedOp = reserve identifierStyle
+  reserved = reserve identifierStyle
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
     type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator
     
     parsePrefixOperator = choice 
-      [ iDec <$ reservedOp "--"
-      , iInc <$ reservedOp "++"
+      [ iDec <$ reserved "--"
+      , iInc <$ reserved "++"
       -- lookAhead $ iCast <$> parens typeName
-      , iRef <$ reservedOp "&"
-      , iDeref <$ reservedOp "*"
-      , iPos <$ reservedOp "+"
-      , iNeg <$ reservedOp "-"
-      , (iBitwise Neg) <$ reservedOp "~"
-      , iNot <$ reservedOp "!"
+      , iRef <$ reserved "&"
+      , iDeref <$ reserved "*"
+      , iPos <$ reserved "+"
+      , iNeg <$ reserved "-"
+      , (iBitwise Neg) <$ reserved "~"
+      , iNot <$ reserved "!"
       , iSizeOf <$ symbol "sizeof"
       ]
     
@@ -188,8 +188,8 @@ module Language.Bracer.Backends.C.Parser where
       [ iIndex <$$> brackets parseExpression
       , iCall  <$$> parens (commaSep parseExpression)
       , parseAccessor
-      , iUnary <$$> (iPostInc <$ reservedOp "++")
-      , iUnary <$$> (iPostDec <$ reservedOp "--")
+      , iUnary <$$> (iPostInc <$ reserved "++")
+      , iUnary <$$> (iPostDec <$ reserved "--")
       ] where
         infixl 1 <$$>
         a <$$> b = (flip a) <$> b
@@ -222,3 +222,22 @@ module Language.Bracer.Backends.C.Parser where
   parseExpression :: CParser (Term ExpressionSig)
   parseExpression = parseInfixExpression
   
+  instance StatementParsing CParser where
+    type StatementSig = C.Statement
+    
+    parseStatement = choice
+      [ C.iBreak <$ reserved "break"
+      -- , parseCase
+      -- , C.iContinue <$ reserved "continue"
+      , C.iDefault <$> (reserved "default" *> colon *> parseStatement)
+      -- -- , For <$> ???? <*> ???? <*> braces (many ???)
+      -- , C.iGoto <$> (reserved "goto" *> parseExpression)
+      -- -- , IfThenElse <$> parseExpression <*> ??? <*> ???
+      -- , C.iLabeled <$> (parseIdentifier <* colon) <*> parseStatement
+      -- , C.iReturn <$> (optional parseExpression)
+      -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
+      -- , C.iSwitch <$> (reserved "switch" *> parens parseExpression) <*> braces (many parseExpression)
+      -- -- , While <$> (reserved "while" *> parens parseExpression) <*> braces (many parseStatement)
+      , deepInject <$> parseExpression
+      , pure C.iEmpty 
+      ]

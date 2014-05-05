@@ -3,6 +3,7 @@ module Language.Bracer.Parsing
   , IdentifierParsing (..)
   , TypeParsing (..)
   , ExpressionParsing (..)
+  , StatementParsing (..)
   ) where
 
   import Prelude ()
@@ -32,19 +33,15 @@ module Language.Bracer.Parsing
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
-  class (IdentifierParsing m, TypeParsing m, LiteralParsing m) => ExpressionParsing m where
+  class (TypeParsing m) => ExpressionParsing m where
     type ExpressionSig :: * -> *
     parsePrefixOperator :: m (Term ExpressionSig)
     parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
     infixOperatorTable :: E.OperatorTable m (Term ExpressionSig)
   
-  class (ExpressionParsing m) => DeclaratorParsing m where
-    type DeclaratorSig :: * -> *
-    parseDeclarator' :: m (Term DeclarationSig)
-  
-  class (DeclaratorParsing m) => StatementParsing m where
+  class (ExpressionParsing m) => StatementParsing m where
     type StatementSig :: * -> *
-    parseStatement :: m (Term (StatementSig :+: DeclaratorSig))
+    parseStatement :: m (Term (ExpressionSig :+: StatementSig))
   
   class (StatementParsing m) => DeclarationParsing m where 
     type DeclarationSig :: * -> *

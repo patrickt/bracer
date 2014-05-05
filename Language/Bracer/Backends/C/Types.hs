@@ -78,6 +78,22 @@ module Language.Bracer.Backends.C.Types where
     = VariableDefn a a
     | FunctionDefn a [a]
     deriving (Functor)
+    
+  data Statement a 
+    = Break
+    | Case a a
+    | Continue
+    | Default a
+    | Empty
+    | For a [a]
+    | Goto a
+    | IfThenElse a [a] [a]
+    | Labeled Name a
+    | Return (Maybe a)
+    | Semi a a
+    | Switch a [a] 
+    | While a
+    deriving (Functor)
   
   derive 
     [ smartConstructors, makeShowF, makeEqF ] 
@@ -89,6 +105,7 @@ module Language.Bracer.Backends.C.Types where
     , ''Declaration
     , ''Definition
     , ''Function
+    , ''Statement
     ]
   
   iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a
