@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.Bracer.Backends.C.Types where
+module Language.Bracer.Backends.C.Syntax where
   
   -- This module is designed to be imported qualified
   -- e.g. import Language.Bracer.Syntax.Types as C
