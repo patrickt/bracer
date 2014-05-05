@@ -13,9 +13,6 @@ module Language.Bracer.Test.C (tests) where
   import Language.Bracer
   import Language.Bracer.Backends.C
   
-  runCParser :: CParser a -> String -> Result a
-  runCParser p = parseString (unCParser (p <* eof)) mempty
-  
   infix 1 `shouldParseAs`
   shouldParseAs :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Term a -> Assertion
   shouldParseAs res ref = res `shouldSatisfy` (fromMaybe False . fmap (eqF ref) . preview _Success)

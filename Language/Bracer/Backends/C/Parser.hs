@@ -40,6 +40,9 @@ module Language.Bracer.Backends.C.Parser where
   unCParser :: CParser a -> Parser a
   unCParser (CParser p) = evalStateT p def
   
+  runCParser :: CParser a -> String -> Result a
+  runCParser p = parseString (unCParser (p <* eof)) mempty
+  
   instance TokenParsing CParser where
     someSpace = buildSomeSpaceParser (CParser someSpace) javaCommentStyle
   
