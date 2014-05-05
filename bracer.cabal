@@ -49,7 +49,6 @@ library
                      , Language.Bracer.Syntax.Operators
                      , Language.Bracer.Syntax.Variables
                      , Language.Bracer.Backends.C
-                     , Language.Bracer.Backends.C.IdentifierStyle
                      , Language.Bracer.Backends.C.Parser
                      , Language.Bracer.Backends.C.Parser.Expressions
                      , Language.Bracer.Backends.C.Parser.Identifiers

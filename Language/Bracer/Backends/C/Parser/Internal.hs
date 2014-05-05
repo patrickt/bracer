@@ -5,19 +5,17 @@ module Language.Bracer.Backends.C.Parser.Internal where
   import Prelude (undefined)
   import Overture hiding (try)
   
-  import Data.Default
-  import Language.Bracer.Backends.C.IdentifierStyle
-  import Language.Bracer.Syntax
+  import qualified Language.Bracer.Backends.C.Syntax as C
+  import Language.Bracer.Syntax.Identifiers
   import Language.Bracer.Parsing
   
   import Control.Monad.State
+  import Data.Default
   import Data.HashMap.Lazy (HashMap)
   import qualified Data.HashMap.Lazy as M
   import Data.Scientific
   import Text.Trifecta
   import Text.Parser.Token.Style
-  
-  import qualified Language.Bracer.Backends.C.Syntax as C
   
   newtype CParser a = CParser (StateT Environment Parser a)
     deriving ( Functor
@@ -46,4 +44,5 @@ module Language.Bracer.Backends.C.Parser.Internal where
   
   instance TokenParsing CParser where
     someSpace = buildSomeSpaceParser (CParser someSpace) javaCommentStyle
+  
   
