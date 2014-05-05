@@ -1,6 +1,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.Bracer.Syntax.Identifiers where
+module Language.Bracer.Syntax.Identifiers 
+  ( Name (..)
+  , Ident (..)
+  , _Anonymous
+  , _Ident 
+  , _Name
+  , iIdent
+  ) where
 
   import Prelude ()
   import Overture

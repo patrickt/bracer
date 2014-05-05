@@ -61,10 +61,10 @@ module Language.Bracer.Backends.C.Parser where
     
   
   endo :: (Term SpecifierSig -> Term SpecifierSig) -> String -> CParser (Endo (Term SpecifierSig))
-  endo fn name = (Endo fn) <$ reserve identifierStyle name
+  endo fn n = (Endo fn) <$ reserve identifierStyle n
 
   solo :: Term SpecifierSig -> String -> CParser (Term SpecifierSig)
-  solo fn name = fn <$ reserve identifierStyle name
+  solo fn n = fn <$ reserve identifierStyle n
   
   -- class (IdentifierParsing m, LiteralParsing m) => CTypeParsing m where
   --   type CTypeSig :: * -> *
@@ -80,7 +80,7 @@ module Language.Bracer.Backends.C.Parser where
     body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
     append <- mconcat <$> many parseAppendix
     return $ Endo $ case body of
-      (Left name) -> iVariable name . ptrFn
+      (Left n) -> iVariable n . ptrFn
       (Right dec) -> appEndo dec . appEndo append . ptrFn
   
   parseSpecifierList :: CParser (Term SpecifierSig)
@@ -158,9 +158,9 @@ module Language.Bracer.Backends.C.Parser where
   
   parseTypedef :: CParser (Term SpecifierSig)
   parseTypedef = do
-    (Ident name) <- unTerm <$> try parseIdentifier
+    (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
-    case (M.lookup name table) of
+    case (M.lookup nam table) of
       Just val -> return $ (C._typedefChildType val)
       Nothing -> empty
   
@@ -195,8 +195,8 @@ module Language.Bracer.Backends.C.Parser where
         a <$$> b = (flip a) <$> b
         parseAccessor = do
           op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
-          name <- deepInject <$> parseIdentifier
-          return (\x -> iAccess x op name)
+          nam <- deepInject <$> parseIdentifier
+          return (\x -> iAccess x op nam)
     
     infixOperatorTable = []
   
