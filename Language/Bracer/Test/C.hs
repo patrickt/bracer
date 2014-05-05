@@ -19,11 +19,13 @@ module Language.Bracer.Test.C (tests) where
   
   tests :: Spec
   tests = describe "C" $ do
+    
     describe "token parser" $ do
       it "ignores traditional comments" $
         (runCParser parseExpression "1 /* comment */") `shouldParseAs` (iIntLit 1 :: Term ExpressionSig)
       it "ignores C++ style comments" $ 
         (runCParser parseExpression "1 // comment") `shouldParseAs` (iIntLit 1 :: Term ExpressionSig)
+    
     describe "literal parser" $ do
       it "parses integers" $
         (runCParser parseExpression "1") `shouldParseAs` (iIntLit 1 :: Term ExpressionSig)
@@ -31,6 +33,10 @@ module Language.Bracer.Test.C (tests) where
         (runCParser parseExpression "1.0") `shouldParseAs` (iFltLit 1.0 :: Term ExpressionSig)
       it "parses characters" $
         (runCParser parseExpression "'c'") `shouldParseAs` (iChrLit 'c' :: Term ExpressionSig)
-        
+    
+    describe "statement parser" $ do
+      it "parses break statements" $
+        (runCParser parseStatement "break") `shouldParseAs` (iBreak :: Term (ExpressionSig :+: StatementSig))
+      
       
       
