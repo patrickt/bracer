@@ -97,6 +97,25 @@ module Language.Bracer.Backends.C.Syntax where
     | While a
     deriving (Functor)
   
+  data Operator a 
+    = Add 
+    | Sub 
+    | Cast a
+    | Dot
+    | Arrow
+    | Inc
+    | Dec
+    | PostInc
+    | PostDec
+    | Ref
+    | Deref
+    | Pos
+    | Neg
+    | Bitwise (Operator a)
+    | SizeOf
+    | Not
+    deriving (Eq, Show, Functor, Foldable, Traversable)
+  
   derive 
     [ smartConstructors, makeShowF, makeEqF ] 
     [ ''BaseType
@@ -108,6 +127,7 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Definition
     , ''Function
     , ''Statement
+    , ''Operator
     ]
   
   derive [ makeLenses ] [ ''Function, ''Composite ]
