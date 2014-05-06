@@ -12,7 +12,7 @@ module Language.Bracer.Parsing
   import Text.Parser.Token
   import qualified Text.Parser.Expression as E
   
-  import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Names
   
   -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where

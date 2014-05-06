@@ -9,7 +9,7 @@ module Language.Bracer.Backends.C.Syntax where
   import Overture hiding (Char, Bool, Float, Double)
   import qualified Overture as O
 
-  import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Names
   import Language.Bracer.Syntax.Lenses
   
   import Data.ByteString (ByteString)
@@ -21,6 +21,9 @@ module Language.Bracer.Backends.C.Syntax where
     | FltLit Scientific
     | ChrLit O.Char
     | StrLit ByteString
+    deriving (Functor)
+  
+  newtype Ident a = Ident Name 
     deriving (Functor)
   
   data BaseType a
@@ -92,6 +95,39 @@ module Language.Bracer.Backends.C.Syntax where
     | FunctionDefn a [a]
     deriving (Functor)
     
+  data Expr a 
+    = Unary 
+      { _operation :: a
+      , _target :: a 
+      }
+    | Binary 
+      { _left :: a
+      , _operation :: a
+      , _right :: a
+      }
+    | Ternary 
+      { _condition :: a
+      , _whenClause :: a
+      , _elseClause :: a 
+      }
+    | Index 
+      { _target :: a
+      , _subscript :: a 
+      }
+    | Call 
+      { _target :: a
+      , _arguments :: [a] 
+      }
+    | Access 
+      { _target :: a
+      , _operation :: a
+      , _member :: a
+      }
+    | Paren
+      { _target :: a
+      }
+    deriving (Functor)
+    
   data Statement a 
     = Break
     | Case a a
@@ -140,9 +176,15 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Statement
     , ''Operator
     , ''Literal
+    , ''Expr
+    , ''Ident
     ]
   
   derive [ makeLenses ] [ ''Function, ''Composite ]
+  derive [ makePrisms ] [ ''Ident ]
+  
+  instance HasName (Ident a) where
+    name = _Ident
   
   instance HasName (Function a) where
     name = functionName

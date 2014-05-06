@@ -1,12 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.Bracer.Syntax.Identifiers 
+module Language.Bracer.Syntax.Names 
   ( Name (..)
-  , Ident (..)
-  , _Anonymous
-  , _Ident 
   , _Name
-  , iIdent
   ) where
 
   import Prelude ()
@@ -28,9 +24,3 @@ module Language.Bracer.Syntax.Identifiers
   makePrisms ''Name
     
   instance IsString Name where fromString = Name . fromString
-
-  newtype Ident a = Ident Name 
-    deriving (Eq, Show, Functor, Foldable, Traversable)
-
-  derive [ smartConstructors, makeShowF, makeEqF, makeWrapped, makePrisms ] [ ''Ident ]
-  

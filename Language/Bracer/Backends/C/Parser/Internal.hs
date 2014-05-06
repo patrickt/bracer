@@ -6,7 +6,7 @@ module Language.Bracer.Backends.C.Parser.Internal where
   import Overture hiding (try)
   
   import qualified Language.Bracer.Backends.C.Syntax as C
-  import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Names
   import Language.Bracer.Parsing
   
   import Control.Monad.State

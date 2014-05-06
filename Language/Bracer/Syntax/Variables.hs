@@ -3,7 +3,7 @@ module Language.Bracer.Syntax.Variables where
   import Prelude ()
   import Overture
   
-  import Language.Bracer.Syntax.Identifiers
+  import Language.Bracer.Syntax.Names
   import Language.Bracer.Syntax.Lenses
 
   import Control.Lens

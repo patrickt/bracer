@@ -42,8 +42,7 @@ library
   exposed-modules:     Language.Bracer
                      , Language.Bracer.Parsing
                      , Language.Bracer.Syntax
-                     , Language.Bracer.Syntax.Expressions
-                     , Language.Bracer.Syntax.Identifiers
+                     , Language.Bracer.Syntax.Names
                      , Language.Bracer.Syntax.Lenses
                      , Language.Bracer.Syntax.Variables
                      , Language.Bracer.Backends.C

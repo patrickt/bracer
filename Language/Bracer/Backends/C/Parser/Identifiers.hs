@@ -4,6 +4,7 @@ module Language.Bracer.Backends.C.Parser.Identifiers where
   import Overture
   
   import Language.Bracer
+  import Language.Bracer.Backends.C.Syntax
   import Language.Bracer.Backends.C.Parser.Internal
   
   import Data.HashSet
