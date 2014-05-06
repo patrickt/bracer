@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Language.Bracer.Test.C (tests) where
 
   import Prelude ()
@@ -19,6 +21,8 @@ module Language.Bracer.Test.C (tests) where
   
   shouldn'tParse :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Assertion
   shouldn'tParse res = res `shouldSatisfy` (isn't _Success)
+  
+  type TypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
   
   tests :: Spec
   tests = describe "C" $ do
@@ -47,24 +51,25 @@ module Language.Bracer.Test.C (tests) where
       it "fails on invalid identifiers" $ do
         shouldn'tParse (runCParser (parseIdentifier' <* eof) "$$$$$")
         
-    -- describe "type parser" $ do
-    --   it "parses simple types" $
-    --     (runCParser parseTypeName "int") `shouldParseAs` (iInt :: Term TypeSig)
-    --   
-    --   it "parses types with an implicit int" $ do
-    --     (runCParser parseTypeName "long") `shouldParseAs` (iLong iInt :: Term TypeSig)
-    --   
-    --   it "parses types with pointers" $ do
-    --     (runCParser parseTypeName "int **") `shouldParseAs` (iPointer (iPointer iInt) :: Term TypeSig)
-    --   
-    --   it "parses types with qualified pointers" $ do
-    --     (runCParser parseTypeName "int * volatile") `shouldParseAs` (iVolatile (iPointer iInt) :: Term TypeSig)
-    --   
-    --   it "parses types with qualified pointers and implicit int" $ do
-    --     (runCParser parseTypeName "long ** const") `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: Term TypeSig)
-    --     
-    --   it "parses types with multiple qualified pointers" $ do
-    --     (runCParser parseTypeName "int * const * volatile") `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: Term TypeSig)
+    describe "type parser" $ do
+      
+      it "parses simple types" $
+        (runCParser (parseTypeName <* eof) "int") `shouldParseAs` (iInt :: Term TypeSig)
+      
+      it "parses types with an implicit int" $ do
+        (runCParser parseTypeName "long") `shouldParseAs` (iLong iInt :: Term TypeSig)
+      
+      it "parses types with pointers" $ do
+        (runCParser parseTypeName "int **") `shouldParseAs` (iPointer (iPointer iInt) :: Term TypeSig)
+      
+      it "parses types with qualified pointers" $ do
+        (runCParser parseTypeName "int * volatile") `shouldParseAs` (iVolatile (iPointer iInt) :: Term TypeSig)
+      
+      it "parses types with qualified pointers and implicit int" $ do
+        (runCParser parseTypeName "long ** const") `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: Term TypeSig)
+        
+      it "parses types with multiple qualified pointers" $ do
+        (runCParser parseTypeName "int * const * volatile") `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: Term TypeSig)
     --   
     --   
     -- 

@@ -19,9 +19,11 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- 
   -- solo :: Term TypeSig -> String -> CParser (Term TypeSig)
   solo fn n = fn <$ reserve identifierStyle n
+  
+  foldMany :: Alternative f => f (Endo a) -> f (a -> a)
+  foldMany p = appEndo <$> mconcat <$> many p
+  
   -- 
-  -- foldMany :: Alternative f => f (Endo a) -> f (a -> a)
-  -- foldMany p = appEndo <$> mconcat <$> many p
   -- 
   -- -- class (IdentifierParsing m, LiteralParsing m) => CTypeParsing m where
   -- --   type CTypeSig :: * -> *
@@ -30,14 +32,15 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- --   parseDeclarator :: m (Endo (Term CTypeSig))
   -- --   parseAppendix :: m (Endo (Term CTypeSig))
   -- 
-  -- parseDeclarator :: CParser (Endo (Term TypeSig))
-  -- parseDeclarator = do
-  --   buildPointers <- foldMany parsePointer
-  --   body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
-  --   append <- foldMany parseAppendix
-  --   return $ Endo $ case body of
-  --     (Left n) -> iVariable n . buildPointers
-  --     (Right dec) -> appEndo dec . append . buildPointers
+  
+  parseDeclarator :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
+  parseDeclarator = do
+    buildPointers <- foldMany parsePointer
+    body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
+    append <- foldMany parseAppendix
+    return $ Endo $ case body of
+      (Left n) -> iVariable n . buildPointers
+      (Right dec) -> appEndo dec . append . buildPointers
   -- 
   
   -- specifier :: CParser (Either (Term ))
@@ -58,16 +61,16 @@ module Language.Bracer.Backends.C.Parser.Types where
     let ordered = quals ++ [ptr]
     return $ mconcat $ ordered
   
-  -- 
-  -- parseAppendix :: CParser (Endo (Term TypeSig))
-  -- parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
+  
+  parseAppendix :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
+  parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
   -- 
   -- instance Show (Endo a) where show _ = "<endofunctor>"
   -- 
-  -- parseFunctionPostamble :: (Functor f, Variable :<: f, Function :<: f) => CParser (Endo (Term f))
-  -- parseFunctionPostamble = do
-  --   funcs <- parens (parseVariable `sepBy` comma)
-  --   return (Endo $ \x -> C.iFunction Anonymous x funcs)
+  parseFunctionPostamble :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
+  parseFunctionPostamble = do
+    funcs <- parens (parseVariable `sepBy` comma)
+    return (Endo $ \x -> C.iFunction Anonymous x funcs)
 
   
   parseArrayPostamble :: (Functor f, LiteralSig :<: f, ModifiedType :<: f) => CParser (Endo (Term f))
@@ -106,25 +109,26 @@ module Language.Bracer.Backends.C.Parser.Types where
     -- , parseTypedef <?> "typedef"
     ]
   
-  parseTypeName' :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
-  parseTypeName' = do
-    specs <- parseSpecifierList
-    ptrs <- (mconcat . reverse) <$> many parsePointer
-    return $ appEndo ptrs $ specs
-  
   instance TypeParsing CParser where
     type BaseSig     = BaseType
     type ModifierSig = ModifiedType
     type AliasSig    = Typedef
     
-    parseTypeName = parseTypeName'
-    
+    parseTypeName = do
+      specs <- parseSpecifierList
+      ptrs <- (mconcat . reverse) <$> many parsePointer
+      return $ appEndo ptrs $ specs
   
-  -- parseVariable = do
-  --   preamble <- parseSpecifierList
-  --   ptrs <- foldMany parsePointer
-  --   declarator <- parseDeclarator
-  --   return $ (appEndo declarator) $ ptrs $ preamble
+  
+  instance VariableParsing CParser where
+    type VariableSig = Variable
+    type FunctionSig = Function
+    
+    parseVariable = do
+      preamble <- parseSpecifierList
+      ptrs <- foldMany parsePointer
+      declarator <- parseDeclarator
+      return $ (appEndo declarator) $ ptrs $ preamble
 
   -- instance TypeParsing CParser where
   --   type TypeSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable

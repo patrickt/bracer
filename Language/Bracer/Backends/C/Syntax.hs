@@ -41,7 +41,7 @@ module Language.Bracer.Backends.C.Syntax where
     | VeryLong
     | Void
     -- should Typedef go in here? I can't decide
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
   
   data ModifiedType a 
     = Array (Maybe a) a

@@ -42,6 +42,7 @@ module Language.Bracer.Parsing
   
   class (TypeParsing m) => VariableParsing m where
     type VariableSig :: * -> *
+    type FunctionSig :: * -> *
     
     parseVariable :: ( Functor f
                     , LiteralSig    :<: f
@@ -50,6 +51,7 @@ module Language.Bracer.Parsing
                     , ModifierSig   :<: f
                     , AliasSig      :<: f
                     , VariableSig   :<: f
+                    , FunctionSig   :<: f
                     ) => m (Term f)
     
   
