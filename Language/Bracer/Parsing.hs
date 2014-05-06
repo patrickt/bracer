@@ -2,6 +2,7 @@ module Language.Bracer.Parsing
   ( LiteralParsing (..) 
   , IdentifierParsing (..)
   , TypeParsing (..)
+  , VariableParsing (..)
   , ExpressionParsing (..)
   , StatementParsing (..)
   ) where
@@ -17,19 +18,40 @@ module Language.Bracer.Parsing
   -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where
     type LiteralSig :: * -> *
-    parseLiteral :: m (Term LiteralSig)
+    parseLiteral :: (Functor f, LiteralSig :<: f) => m (Term f)
   
   class (TokenParsing m, Monad m) => IdentifierParsing m where
     type IdentifierSig :: * -> *
     identifierStyle    :: IdentifierStyle m
-    parseIdentifier    :: m (Term IdentifierSig)
+    parseIdentifier    :: (Functor f, IdentifierSig :<: f) => m (Term f)
     parseName          :: m Name
     parseName = Name <$> ident identifierStyle
   
   class (IdentifierParsing m, LiteralParsing m) => TypeParsing m where
-    type TypeSig :: * -> *
-    parseVariable :: m (Term TypeSig)
-    parseTypeName :: m (Term TypeSig)
+    type BaseSig     :: * -> *
+    type ModifierSig :: * -> *
+    type AliasSig    :: * -> *
+    
+    parseTypeName :: ( Functor f
+                    , LiteralSig    :<: f
+                    , IdentifierSig :<: f
+                    , BaseSig       :<: f
+                    , ModifierSig   :<: f
+                    , AliasSig      :<: f
+                    ) => m (Term f)
+  
+  class (TypeParsing m) => VariableParsing m where
+    type VariableSig :: * -> *
+    
+    parseVariable :: ( Functor f
+                    , LiteralSig    :<: f
+                    , IdentifierSig :<: f
+                    , BaseSig       :<: f
+                    , ModifierSig   :<: f
+                    , AliasSig      :<: f
+                    , VariableSig   :<: f
+                    ) => m (Term f)
+    
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions

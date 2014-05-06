@@ -47,12 +47,12 @@ library
                      , Language.Bracer.Syntax.Variables
                      , Language.Bracer.Backends.C
                      , Language.Bracer.Backends.C.Parser
-                     , Language.Bracer.Backends.C.Parser.Expressions
+                     -- , Language.Bracer.Backends.C.Parser.Expressions
                      , Language.Bracer.Backends.C.Parser.Identifiers
                      , Language.Bracer.Backends.C.Parser.Internal
                      , Language.Bracer.Backends.C.Parser.Literals
-                     , Language.Bracer.Backends.C.Parser.Statements
-                     , Language.Bracer.Backends.C.Parser.Types
+                     -- , Language.Bracer.Backends.C.Parser.Statements
+                     -- , Language.Bracer.Backends.C.Parser.Types
                      , Language.Bracer.Backends.C.Syntax
 
   ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
@@ -85,6 +85,7 @@ executable test
                      , GeneralizedNewtypeDeriving
                      , KindSignatures
                      , MultiParamTypeClasses
+                     , OverloadedStrings
                      , QuasiQuotes
                      , TemplateHaskell
                      , TypeFamilies

@@ -1,11 +1,10 @@
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances, RankNTypes #-}
 
 module Language.Bracer.Backends.C.Parser.Internal where
   
   import Prelude (undefined)
   import Overture hiding (try)
   
-  import qualified Language.Bracer.Backends.C.Syntax as C
   import Language.Bracer.Syntax.Names
   import Language.Bracer.Parsing
   
@@ -30,7 +29,7 @@ module Language.Bracer.Backends.C.Parser.Internal where
              )
   
   data Environment = Environment
-    { _typedefTable :: HashMap Name (C.Typedef (Term TypeSig))
+    { _typedefTable :: forall f . HashMap Name (Term f)
     }
 
   instance Default Environment where
