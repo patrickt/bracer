@@ -5,9 +5,10 @@ module Language.Bracer.Backends.C.Parser.Literals where
   
   import Language.Bracer
   import Language.Bracer.Backends.C.Parser.Internal
-  import Text.Trifecta
+  import Language.Bracer.Backends.C.Syntax
   
   import Data.Scientific
+  import Text.Trifecta
   
   instance LiteralParsing CParser where
     type LiteralSig = Literal

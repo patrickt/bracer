@@ -6,11 +6,22 @@ module Language.Bracer.Backends.C.Syntax where
   -- e.g. import Language.Bracer.Syntax.Types as C
   
   import Prelude ()
-  import Data.Comp.Derive
   import Overture hiding (Char, Bool, Float, Double)
+  import qualified Overture as O
+
   import Language.Bracer.Syntax.Identifiers
   import Language.Bracer.Syntax.Lenses
-  import Control.Lens
+  
+  import Data.ByteString (ByteString)
+  import Data.Comp.Derive
+  import Data.Scientific
+  
+  data Literal a 
+    = IntLit Integer
+    | FltLit Scientific
+    | ChrLit O.Char
+    | StrLit ByteString
+    deriving (Functor)
   
   data BaseType a
     = Bool
@@ -128,6 +139,7 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Function
     , ''Statement
     , ''Operator
+    , ''Literal
     ]
   
   derive [ makeLenses ] [ ''Function, ''Composite ]

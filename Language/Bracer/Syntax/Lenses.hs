@@ -1,5 +1,6 @@
 module Language.Bracer.Syntax.Lenses 
-  ( HasName (..)
+  ( module Control.Lens
+  , HasName (..)
   , HasType (..) 
   ) where
   

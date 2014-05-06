@@ -45,7 +45,6 @@ library
                      , Language.Bracer.Syntax.Expressions
                      , Language.Bracer.Syntax.Identifiers
                      , Language.Bracer.Syntax.Lenses
-                     , Language.Bracer.Syntax.Literals
                      , Language.Bracer.Syntax.Variables
                      , Language.Bracer.Backends.C
                      , Language.Bracer.Backends.C.Parser
