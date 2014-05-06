@@ -30,7 +30,7 @@ module Language.Bracer.Backends.C.Parser.Internal where
              )
   
   data Environment = Environment
-    { _typedefTable :: HashMap Name (C.Typedef (Term SpecifierSig))
+    { _typedefTable :: HashMap Name (C.Typedef (Term TypeSig))
     }
 
   instance Default Environment where

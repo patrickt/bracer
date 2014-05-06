@@ -33,13 +33,32 @@ module Language.Bracer.Test.C (tests) where
         (runCParser parseExpression "1.0") `shouldParseAs` (iFltLit 1.0 :: Term ExpressionSig)
       it "parses characters" $
         (runCParser parseExpression "'c'") `shouldParseAs` (iChrLit 'c' :: Term ExpressionSig)
+        
+    describe "type parser" $ do
+      it "parses simple types" $
+        (runCParser parseTypeName "int") `shouldParseAs` (iInt :: Term TypeSig)
+      
+      it "parses types with an implicit int" $ do
+        (runCParser parseTypeName "long") `shouldParseAs` (iLong iInt :: Term TypeSig)
+      
+      it "parses types with pointers" $ do
+        (runCParser parseTypeName "int **") `shouldParseAs` (iPointer (iPointer iInt) :: Term TypeSig)
+      
+      it "parses types with qualified pointers" $ do
+        (runCParser parseTypeName "int * volatile") `shouldParseAs` (iVolatile (iPointer iInt) :: Term TypeSig)
+      
+      it "parses types with qualified pointers and implicit int" $ do
+        (runCParser parseTypeName "long ** const") `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: Term TypeSig)
+        
+      it "parses types with multiple qualified pointers" $ do
+        (runCParser parseTypeName "int * const * volatile") `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: Term TypeSig)
+      
+      
     
     describe "statement parser" $ do
       it "parses break statements" $
         (runCParser parseStatement "break") `shouldParseAs` (iBreak :: Term (ExpressionSig :+: StatementSig))
-        
-      it "parses valid default statements statements" $
-        (runCParser parseStatement "default: a") `shouldParseAs` (iDefault (iIdent (Name "a")) :: Term (ExpressionSig :+: StatementSig))
+      
       
       
       

@@ -27,9 +27,9 @@ module Language.Bracer.Parsing
     parseName = Name <$> ident identifierStyle
   
   class (IdentifierParsing m, LiteralParsing m) => TypeParsing m where
-    type SpecifierSig :: * -> *
-    parseVariable :: m (Term SpecifierSig)
-    parseTypeName :: m (Term SpecifierSig)
+    type TypeSig :: * -> *
+    parseVariable :: m (Term TypeSig)
+    parseTypeName :: m (Term TypeSig)
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions

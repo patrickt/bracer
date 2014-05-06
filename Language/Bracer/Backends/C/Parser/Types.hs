@@ -14,11 +14,14 @@ module Language.Bracer.Backends.C.Parser.Types where
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
-  endo :: (Term SpecifierSig -> Term SpecifierSig) -> String -> CParser (Endo (Term SpecifierSig))
+  endo :: (Term TypeSig -> Term TypeSig) -> String -> CParser (Endo (Term TypeSig))
   endo fn n = (Endo fn) <$ reserve identifierStyle n
 
-  solo :: Term SpecifierSig -> String -> CParser (Term SpecifierSig)
+  solo :: Term TypeSig -> String -> CParser (Term TypeSig)
   solo fn n = fn <$ reserve identifierStyle n
+  
+  foldMany :: Alternative f => f (Endo a) -> f (a -> a)
+  foldMany p = appEndo <$> mconcat <$> many p
   
   -- class (IdentifierParsing m, LiteralParsing m) => CTypeParsing m where
   --   type CTypeSig :: * -> *
@@ -27,17 +30,16 @@ module Language.Bracer.Backends.C.Parser.Types where
   --   parseDeclarator :: m (Endo (Term CTypeSig))
   --   parseAppendix :: m (Endo (Term CTypeSig))
   
-  parseDeclarator :: CParser (Endo (Term SpecifierSig))
+  parseDeclarator :: CParser (Endo (Term TypeSig))
   parseDeclarator = do
-    ptrs <- mconcat <$> many parsePointer
-    let ptrFn = appEndo ptrs
+    buildPointers <- foldMany parsePointer
     body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
-    append <- mconcat <$> many parseAppendix
+    append <- foldMany parseAppendix
     return $ Endo $ case body of
-      (Left n) -> iVariable n . ptrFn
-      (Right dec) -> appEndo dec . appEndo append . ptrFn
+      (Left n) -> iVariable n . buildPointers
+      (Right dec) -> appEndo dec . append . buildPointers
   
-  parseSpecifierList :: CParser (Term SpecifierSig)
+  parseSpecifierList :: CParser (Term TypeSig)
   parseSpecifierList = do
     specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
     let (mods, terminals) = partitionEithers specs
@@ -46,12 +48,12 @@ module Language.Bracer.Backends.C.Parser.Types where
     let typ' = if null terminals then C.iInt else (head terminals)
     return $ modifier typ'
   
-  parseAppendix :: CParser (Endo (Term SpecifierSig))
+  parseAppendix :: CParser (Endo (Term TypeSig))
   parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
   
   instance Show (Endo a) where show _ = "<endofunctor>"
   
-  parseFunctionPostamble :: CParser (Endo (Term SpecifierSig))
+  parseFunctionPostamble :: CParser (Endo (Term TypeSig))
   parseFunctionPostamble = do
     funcs <- parens (parseVariable `sepBy` comma)
     return (Endo $ \x -> C.iFunction Anonymous x funcs)
@@ -75,7 +77,6 @@ module Language.Bracer.Backends.C.Parser.Types where
     , endo C.iSigned "signed"
     , endo C.iUnsigned "unsigned"
     , endo C.iComplex "_Complex"
-    , mconcat <$> some parsePointer
     ] where
       typedef a = C.iTypedef a Anonymous
   parseRootType = choice 
@@ -91,26 +92,27 @@ module Language.Bracer.Backends.C.Parser.Types where
     ]
   
   instance TypeParsing CParser where
-    type SpecifierSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable
+    type TypeSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable
     
     parseTypeName = do
       specs <- parseSpecifierList
-      ptrs <- mconcat <$> many parsePointer
+      ptrs <- (mconcat . reverse) <$> many parsePointer
       return $ appEndo ptrs $ specs
     
     parseVariable = do
       preamble <- parseSpecifierList
+      ptrs <- foldMany parsePointer
       declarator <- parseDeclarator
-      return $ (appEndo declarator) preamble
+      return $ (appEndo declarator) $ ptrs $ preamble
 
-  parsePointer :: CParser (Endo (Term SpecifierSig))
+  parsePointer :: CParser (Endo (Term TypeSig))
   parsePointer = do 
       ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
       quals <- many parseModifier
-      let ordered = reverse quals ++ [ptr]
-      return $ getDual $ mconcat $ Dual <$> ordered
+      let ordered = quals ++ [ptr]
+      return $ mconcat $ ordered
   
-  parseTypedef :: CParser (Term SpecifierSig)
+  parseTypedef :: CParser (Term TypeSig)
   parseTypedef = do
     (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
