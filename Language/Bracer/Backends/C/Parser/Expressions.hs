@@ -21,7 +21,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     parsePrefixOperator = choice 
       [ iDec <$ reserved "--"
       , iInc <$ reserved "++"
-      -- lookAhead $ iCast <$> parens typeName
+      , try $ iCast <$> parens (inject <$> unTerm <$> parseTypeName)
       , iRef <$ reserved "&"
       , iDeref <$ reserved "*"
       , iPos <$ reserved "+"
@@ -47,25 +47,25 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     
     infixOperatorTable = []
   
-  parsePrimaryExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, LiteralSig :<: f) => CParser (Term f)
+  parsePrimaryExpression :: (IsExpression f) => CParser (Term f)
   parsePrimaryExpression = choice 
     [ parseIdentifier
     , parseLiteral
     -- , iParen     <$> parens parseExpression
     ]
    
-  parsePostfixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
+  parsePostfixExpression :: (IsExpression f) => CParser (Term f)
   parsePostfixExpression = do
     subject <- parsePrimaryExpression
     postfixes <- many parsePostfixOperator
     return $ foldl (>>>) id postfixes subject
   
-  parsePrefixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
+  parsePrefixExpression :: (IsExpression f) => CParser (Term f)
   parsePrefixExpression = foldl (<<<) id <$> (many (iUnary <$> parsePrefixOperator)) <*> parsePostfixExpression
   
-  parseInfixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
+  parseInfixExpression :: (IsExpression f) => CParser (Term f)
   parseInfixExpression = E.buildExpressionParser infixOperatorTable parsePrefixExpression
   
-  parseExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
+  parseExpression :: (IsExpression f) => CParser (Term f)
   parseExpression = parseInfixExpression
   

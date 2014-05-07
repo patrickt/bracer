@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
 module Language.Bracer.Test.C (tests) where
 
@@ -9,6 +9,7 @@ module Language.Bracer.Test.C (tests) where
   import Test.Hspec.QuickCheck
   import Test.HUnit
   import Test.QuickCheck hiding (Success)
+  import Test.QuickCheck.Property
   
   import Control.Lens
   import Text.Trifecta
@@ -18,7 +19,7 @@ module Language.Bracer.Test.C (tests) where
   import Language.Bracer
   import Language.Bracer.Backends.C
   import Language.Bracer.Test.Internal
-  
+
   tests :: Spec
   tests = describe "C" $ do
     
@@ -36,21 +37,18 @@ module Language.Bracer.Test.C (tests) where
       it "parses characters" $
         runCParser (parseLiteral <* eof) "'c'" `shouldParseAs` (iChrLit 'c' :: Term Literal)
 
-      prop "doesn't lose any floating-point precision" $ do
-        (NonNegative scientific) <- arbitrary
-        case runCParser (parseLiteral <* eof) (show scientific) of 
-          (Success n) -> if (n `eqF` (iFltLit scientific :: Term Literal)) 
-            then return True 
-            else (fail ("expected " ++ show scientific ++ ", got " ++ show n))
-          _ -> fail ("parse error: couldn't parse " ++ (show scientific)) 
+      prop "parses any floating-point number" $ do
+        let parseLit = parseLiteral :: CParser (Term Literal)
+        (NonNegative (s :: Scientific)) <- arbitrary
+        let res = runCParser (parseLit <* eof) (show s)
+        shouldSucceed res
 
-      prop "parses any natural integer correctly" $ do
-        (NonNegative int) <- arbitrary
-        case runCParser (parseLiteral <* eof) (show int) of 
-          (Success n) -> if (n `eqF` (iIntLit int :: Term Literal)) 
-            then return True 
-            else (fail ("expected " ++ show int ++ ", got " ++ show n))
-          _ -> fail ("parse error: couldn't parse " ++ (show int)) 
+      prop "preserves floating-point numbers round trip" $ do
+        let parseLit = parseLiteral :: CParser (Term Literal)
+        (NonNegative (s :: Scientific)) <- arbitrary
+        let res = runCParser (parseLit <* eof) (show s) ^? _Success
+        putStrLn ("Expected " <> show s <> ", got " <> show res) `whenFail` (maybe False (== (iFltLit s)) res) 
+
 
     
     describe "identifier parser" $ do

@@ -1,1 +1,3 @@
 :m + Data.Comp.Show
+:m + Control.Lens
+:m + Text.Trifecta

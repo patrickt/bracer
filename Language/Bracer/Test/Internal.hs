@@ -1,6 +1,9 @@
+{-# LANGUAGE NoMonomorphismRestriction #-} --todo fix this
+
 module Language.Bracer.Test.Internal 
 ( shouldParseAs
 , shouldn'tParse
+, shouldSucceed
 , Arbitrary (..) 
 )
 where
@@ -20,6 +23,8 @@ import Text.Trifecta
 
 import Language.Bracer
 import Language.Bracer.Backends.C
+
+shouldSucceed = return . has _Success
 
 infix 1 `shouldParseAs`
 shouldParseAs :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Term a -> Assertion

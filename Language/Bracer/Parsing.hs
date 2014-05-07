@@ -7,6 +7,7 @@ module Language.Bracer.Parsing
   , TypeSig
   , VariableParsing (..)
   , ExpressionParsing (..)
+  , IsExpression
   , StatementParsing (..)
   ) where
 
@@ -74,17 +75,9 @@ module Language.Bracer.Parsing
     parsePostfixOperator :: (IsExpression f) => m (Term f -> Term f)
     infixOperatorTable :: (IsExpression f) => E.OperatorTable m (Term f)
   
-  class ( Functor f
-        , IdentifierSig :<: f
-        , ExpressionSig :<: f
-        , OperatorSig :<: f
-        , LiteralSig :<: f) => IsExpression f
+  class ( IsTypeSignature f, ExpressionSig :<: f, OperatorSig :<: f) => IsExpression f
   
-  instance ( Functor f
-           , IdentifierSig :<: f
-           , ExpressionSig :<: f
-           , OperatorSig :<: f
-           , LiteralSig :<: f) => IsExpression f where
+  instance (IsTypeSignature f, ExpressionSig :<: f, OperatorSig :<: f) => IsExpression f where
              
   class (IsExpression f, StatementSig :<: f) => IsStatement f
   instance (IsExpression f, StatementSig :<: f) => IsStatement f

@@ -113,6 +113,8 @@ module Language.Bracer.Backends.C.Parser.Types where
       specs <- parseSpecifierList
       ptrs <- (mconcat . reverse) <$> many parsePointer
       return $ appEndo ptrs specs
+
+  type CTypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
   
   
   instance VariableParsing CParser where
