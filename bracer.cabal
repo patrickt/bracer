@@ -22,6 +22,7 @@ library
                      , parsers == 0.11
                      , scientific == 0.2.0.*
                      , trifecta == 1.4.2.*
+                     , vector == 0.10.*
                      , unordered-containers == 0.2.*
                      , utf8-string == 0.3.*
 
@@ -78,6 +79,7 @@ executable test
                     , trifecta == 1.4.2.*
                     , unordered-containers == 0.2.*
                     , utf8-string == 0.3.*
+                    , vector == 0.10.*
                     , hspec == 1.9.*
                     , HUnit == 1.2.5.*
                     , QuickCheck == 2.6.*

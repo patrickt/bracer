@@ -4,11 +4,13 @@ module Language.Bracer.Parsing
   ( LiteralParsing (..) 
   , IdentifierParsing (..)
   , TypeParsing (..)
-  , TypeSig
+  , IsTypeSignature
   , VariableParsing (..)
+  , IsVariable
   , ExpressionParsing (..)
   , IsExpression
   , StatementParsing (..)
+  , IsStatement
   ) where
 
   import Prelude ()
@@ -62,8 +64,7 @@ module Language.Bracer.Parsing
   
   class (IsTypeSignature f, VariableSig :<: f, FunctionSig :<: f) => IsVariable f
   instance (IsTypeSignature f, VariableSig :<: f, FunctionSig :<: f) => IsVariable f where
-                    
-  type TypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
+  
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
@@ -79,10 +80,10 @@ module Language.Bracer.Parsing
   
   instance (IsTypeSignature f, ExpressionSig :<: f, OperatorSig :<: f) => IsExpression f where
              
-  class (IsExpression f, StatementSig :<: f) => IsStatement f
-  instance (IsExpression f, StatementSig :<: f) => IsStatement f
+  class (IsExpression f, IsVariable f, StatementSig :<: f) => IsStatement f
+  instance (IsExpression f, IsVariable f, StatementSig :<: f) => IsStatement f
   
-  class (ExpressionParsing m) => StatementParsing m where
+  class (VariableParsing m, ExpressionParsing m) => StatementParsing m where
     type StatementSig :: * -> *
     parseStatement :: (IsStatement f) => m (Term f)
   

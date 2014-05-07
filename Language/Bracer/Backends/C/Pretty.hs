@@ -87,6 +87,10 @@ instance PrettyAlg Operator where
 
   prettyA Equal = "=="
   prettyA NotEqual = "="
+  prettyA (Cast t) = parens t
+  prettyA Dot = "."
+  prettyA Arrow = "->"
+  prettyA Not = "!"
   
   prettyA And = "&&"
   prettyA Or = "||"

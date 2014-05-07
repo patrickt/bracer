@@ -15,6 +15,7 @@ module Language.Bracer.Backends.C.Syntax where
   import Data.ByteString (ByteString)
   import Data.Comp.Derive
   import Data.Scientific
+  import Data.Vector
   
   data Literal a 
     = IntLit Integer
@@ -131,16 +132,17 @@ module Language.Bracer.Backends.C.Syntax where
     = Break
     | Case a a
     | Continue
+    | Compound (Vector a)
     | Default a
     | Empty
     | For a [a]
     | Goto a
-    | IfThenElse a [a] [a]
+    | IfThenElse a a (Maybe a)
     | Labeled Name a
     | Return (Maybe a)
     | Semi a a
-    | Switch a [a] 
-    | While a
+    | Switch a a
+    | While a a
     deriving (Functor)
   
   data Operator a 

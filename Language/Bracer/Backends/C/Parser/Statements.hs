@@ -3,11 +3,15 @@ module Language.Bracer.Backends.C.Parser.Statements where
   import Prelude ()
   import Overture
   
+  import Data.Vector
   import Language.Bracer
   import Language.Bracer.Backends.C.Syntax as C
   import Language.Bracer.Backends.C.Parser.Internal
   import Language.Bracer.Backends.C.Parser.Expressions
   import Text.Trifecta
+
+  blockItem :: (IsStatement f, IsVariable f) => CParser (Term f)
+  blockItem = parseExpression <|> parseVariable <|> parseStatement
   
   instance StatementParsing CParser where
     type StatementSig = C.Statement
@@ -16,15 +20,16 @@ module Language.Bracer.Backends.C.Parser.Statements where
       [ C.iBreak <$ reserved "break"
       , C.iCase <$> parseExpression <*> (colon *> parseStatement)
       , C.iContinue <$ reserved "continue"
+      , C.iCompound <$> braces (fromList <$> many blockItem)
       , C.iDefault <$> (reserved "default" *> colon *> parseStatement)
-      -- -- , For <$> ???? <*> ???? <*> braces (many ???)
+      -- For <$> ???? <*> ???? <*> braces (many ???)
       , C.iGoto <$> (reserved "goto" *> parseIdentifier)
-      -- -- , IfThenElse <$> parseExpression <*> ??? <*> ???
+      , C.iIfThenElse <$> (reserved "if" *> parens parseExpression) <*> parseStatement <*> optional (reserved "else" *> parseStatement)
       , C.iLabeled <$> parseName <*> (colon *> parseStatement)
       , C.iReturn <$> optional parseExpression
       -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
-      -- , C.iSwitch <$> (reserved "switch" *> parens parseExpression) <*> braces (many parseExpression)
-      -- -- , While <$> (reserved "while" *> parens parseExpression) <*> braces (many parseStatement)
+      , C.iSwitch <$> (reserved "switch" *> parens parseExpression) <*> parseStatement
+      , C.iWhile <$> (reserved "while" *> parens parseExpression) <*> parseStatement
       , parseExpression
       , pure C.iEmpty 
       ]
