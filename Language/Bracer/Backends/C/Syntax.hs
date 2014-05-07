@@ -31,14 +31,13 @@ module Language.Bracer.Backends.C.Syntax where
     | Builtin Name
     | Char
     | Double
-    | Enum Name
+    | Enum (Maybe Name)
     | Float
     | Int
     | Int128
-    | Struct Name
+    | Struct (Maybe Name)
     | TypeOf a
-    | Union Name
-    | VeryLong
+    | Union (Maybe Name)
     | Void
     -- should Typedef go in here? I can't decide
     deriving (Show, Eq, Functor)
@@ -126,7 +125,7 @@ module Language.Bracer.Backends.C.Syntax where
     | Paren
       { _target :: a
       }
-    deriving (Functor)
+    deriving (Functor, Foldable)
     
   data Statement a 
     = Break
@@ -155,6 +154,16 @@ module Language.Bracer.Backends.C.Syntax where
     | PostInc
     | PostDec
     | Ref
+    | RShift
+    | LShift
+    | Mul
+    | Mod
+    | Equal
+    | NotEqual
+    | And
+    | Or
+    | Xor
+    | Div
     | Deref
     | Pos
     | Neg
@@ -180,7 +189,7 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Ident
     ]
   
-  derive [ makeLenses ] [ ''Function, ''Composite ]
+  derive [ makeLenses ] [ ''Function, ''Composite, ''Expr ]
   derive [ makePrisms ] [ ''Ident ]
   
   instance HasName (Ident a) where

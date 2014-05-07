@@ -38,7 +38,6 @@ module Overture
   
   -- The important components of the base package
   import Control.Applicative as X hiding (liftA)
-  import Control.Arrow as X
   import Control.Category as X
   import Control.Exception as X
   import Control.Monad as X hiding ( forM
