@@ -14,17 +14,17 @@ module Language.Bracer.Backends.C.Parser.Statements where
     
     parseStatement = choice
       [ C.iBreak <$ reserved "break"
-      -- , parseCase
-      -- , C.iContinue <$ reserved "continue"
+      , C.iCase <$> parseExpression <*> (colon *> parseStatement)
+      , C.iContinue <$ reserved "continue"
       , C.iDefault <$> (reserved "default" *> colon *> parseStatement)
       -- -- , For <$> ???? <*> ???? <*> braces (many ???)
-      -- , C.iGoto <$> (reserved "goto" *> parseExpression)
+      , C.iGoto <$> (reserved "goto" *> parseIdentifier)
       -- -- , IfThenElse <$> parseExpression <*> ??? <*> ???
-      -- , C.iLabeled <$> (parseIdentifier <* colon) <*> parseStatement
-      -- , C.iReturn <$> (optional parseExpression)
+      , C.iLabeled <$> parseName <*> (colon *> parseStatement)
+      , C.iReturn <$> (optional parseExpression)
       -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
       -- , C.iSwitch <$> (reserved "switch" *> parens parseExpression) <*> braces (many parseExpression)
       -- -- , While <$> (reserved "while" *> parens parseExpression) <*> braces (many parseStatement)
-      , deepInject <$> parseExpression
+      , parseExpression
       , pure C.iEmpty 
       ]

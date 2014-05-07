@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Language.Bracer.Parsing 
   ( LiteralParsing (..) 
   , IdentifierParsing (..)
@@ -28,61 +30,68 @@ module Language.Bracer.Parsing
     parseName          :: m Name
     parseName = Name <$> ident identifierStyle
   
+  class ( Functor f
+        , LiteralSig    :<: f
+        , IdentifierSig :<: f
+        , BaseSig       :<: f
+        , ModifierSig   :<: f
+        , AliasSig      :<: f
+        ) => IsTypeSignature f
+  
+  instance ( Functor f
+        , LiteralSig    :<: f
+        , IdentifierSig :<: f
+        , BaseSig       :<: f
+        , ModifierSig   :<: f
+        , AliasSig      :<: f
+        ) => IsTypeSignature f where
+  
   class (IdentifierParsing m, LiteralParsing m) => TypeParsing m where
     type BaseSig     :: * -> *
     type ModifierSig :: * -> *
     type AliasSig    :: * -> *
     
-    parseTypeName :: ( Functor f
-                    , LiteralSig    :<: f
-                    , IdentifierSig :<: f
-                    , BaseSig       :<: f
-                    , ModifierSig   :<: f
-                    , AliasSig      :<: f
-                    ) => m (Term f)
+    parseTypeName :: (IsTypeSignature f) => m (Term f)
   
   class (TypeParsing m) => VariableParsing m where
     type VariableSig :: * -> *
     type FunctionSig :: * -> *
     
-    parseVariable :: ( Functor f
-                    , LiteralSig    :<: f
-                    , IdentifierSig :<: f
-                    , BaseSig       :<: f
-                    , ModifierSig   :<: f
-                    , AliasSig      :<: f
-                    , VariableSig   :<: f
-                    , FunctionSig   :<: f
-                    ) => m (Term f)
+    parseVariable :: (IsVariable f) => m (Term f)
+  
+  class (IsTypeSignature f, VariableSig :<: f, FunctionSig :<: f) => IsVariable f
+  instance (IsTypeSignature f, VariableSig :<: f, FunctionSig :<: f) => IsVariable f where
                     
   type TypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
-  
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
   class (TypeParsing m) => ExpressionParsing m where
     type ExpressionSig :: * -> *
     type OperatorSig :: * -> *
-    parsePrefixOperator :: ( Functor f
-                           , IdentifierSig :<: f
-                           , ExpressionSig :<: f
-                           , OperatorSig :<: f
-                           , LiteralSig :<: f) => m (Term f)
+    parsePrefixOperator :: (IsExpression f) => m (Term f)
     
-    parsePostfixOperator :: ( Functor f
-                            , IdentifierSig :<: f
-                            , ExpressionSig :<: f
-                            , OperatorSig :<: f
-                            , LiteralSig :<: f
-                            ) => m (Term f -> Term f)
-    infixOperatorTable :: ( Functor f 
-                          , IdentifierSig :<: f
-                          , ExpressionSig :<: f
-                          , OperatorSig :<: f) => E.OperatorTable m (Term f)
+    parsePostfixOperator :: (IsExpression f) => m (Term f -> Term f)
+    infixOperatorTable :: (IsExpression f) => E.OperatorTable m (Term f)
+  
+  class ( Functor f
+        , IdentifierSig :<: f
+        , ExpressionSig :<: f
+        , OperatorSig :<: f
+        , LiteralSig :<: f) => IsExpression f
+  
+  instance ( Functor f
+           , IdentifierSig :<: f
+           , ExpressionSig :<: f
+           , OperatorSig :<: f
+           , LiteralSig :<: f) => IsExpression f where
+             
+  class (IsExpression f, StatementSig :<: f) => IsStatement f
+  instance (IsExpression f, StatementSig :<: f) => IsStatement f
   
   class (ExpressionParsing m) => StatementParsing m where
     type StatementSig :: * -> *
-    parseStatement :: m (Term (ExpressionSig :+: StatementSig))
+    parseStatement :: (IsStatement f) => m (Term f)
   
   class (StatementParsing m) => DeclarationParsing m where 
     type DeclarationSig :: * -> *
