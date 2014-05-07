@@ -6,21 +6,18 @@ module Language.Bracer.Test.C (tests) where
   import Overture
   
   import Test.Hspec
+  import Test.Hspec.QuickCheck
   import Test.HUnit
+  import Test.QuickCheck hiding (Success)
   
   import Control.Lens
   import Text.Trifecta
   import Data.Comp.Show
+  import Data.Scientific
   
   import Language.Bracer
   import Language.Bracer.Backends.C
-  
-  infix 1 `shouldParseAs`
-  shouldParseAs :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Term a -> Assertion
-  shouldParseAs res ref = res `shouldSatisfy` (fromMaybe False . fmap (eqF ref) . preview _Success)
-  
-  shouldn'tParse :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Assertion
-  shouldn'tParse res = res `shouldSatisfy` isn't _Success
+  import Language.Bracer.Test.Internal
   
   tests :: Spec
   tests = describe "C" $ do
@@ -38,6 +35,23 @@ module Language.Bracer.Test.C (tests) where
         runCParser (parseLiteral <* eof) "1.0" `shouldParseAs` (iFltLit 1.0 :: Term Literal)
       it "parses characters" $
         runCParser (parseLiteral <* eof) "'c'" `shouldParseAs` (iChrLit 'c' :: Term Literal)
+
+      prop "doesn't lose any floating-point precision" $ do
+        (NonNegative scientific) <- arbitrary
+        case runCParser (parseLiteral <* eof) (show scientific) of 
+          (Success n) -> if (n `eqF` (iFltLit scientific :: Term Literal)) 
+            then return True 
+            else (fail ("expected " ++ show scientific ++ ", got " ++ show n))
+          _ -> fail ("parse error: couldn't parse " ++ (show scientific)) 
+
+      prop "parses any natural integer correctly" $ do
+        (NonNegative int) <- arbitrary
+        case runCParser (parseLiteral <* eof) (show int) of 
+          (Success n) -> if (n `eqF` (iIntLit int :: Term Literal)) 
+            then return True 
+            else (fail ("expected " ++ show int ++ ", got " ++ show n))
+          _ -> fail ("parse error: couldn't parse " ++ (show int)) 
+
     
     describe "identifier parser" $ do
       let parseIdentifier' = parseIdentifier :: CParser (Term Ident)
