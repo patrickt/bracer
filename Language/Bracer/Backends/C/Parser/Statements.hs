@@ -21,7 +21,7 @@ module Language.Bracer.Backends.C.Parser.Statements where
       , C.iGoto <$> (reserved "goto" *> parseIdentifier)
       -- -- , IfThenElse <$> parseExpression <*> ??? <*> ???
       , C.iLabeled <$> parseName <*> (colon *> parseStatement)
-      , C.iReturn <$> (optional parseExpression)
+      , C.iReturn <$> optional parseExpression
       -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
       -- , C.iSwitch <$> (reserved "switch" *> parens parseExpression) <*> braces (many parseExpression)
       -- -- , While <$> (reserved "while" *> parens parseExpression) <*> braces (many parseStatement)

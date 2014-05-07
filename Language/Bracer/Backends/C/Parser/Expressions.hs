@@ -26,14 +26,14 @@ module Language.Bracer.Backends.C.Parser.Expressions where
       , iDeref <$ reserved "*"
       , iPos <$ reserved "+"
       , iNeg <$ reserved "-"
-      , (iBitwise Neg) <$ reserved "~"
+      , iBitwise Neg <$ reserved "~"
       , iNot <$ reserved "!"
       , iSizeOf <$ symbol "sizeof"
       ]
     
     parsePostfixOperator = choice 
       [ iIndex <$$> brackets parseExpression
-      , iCall  <$$> (parens (commaSep parseExpression))
+      , iCall  <$$> parens (commaSep parseExpression)
       , parseAccessor
       , iUnary <$$> (iPostInc <$ reserved "++")
       , iUnary <$$> (iPostDec <$ reserved "--")

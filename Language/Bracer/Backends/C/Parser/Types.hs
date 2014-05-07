@@ -15,7 +15,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   import Text.Trifecta
   
   endo :: IdentifierParsing f => (a -> a) -> String -> f (Endo a)
-  endo fn n = (Endo fn) <$ reserve identifierStyle n
+  endo fn n = Endo fn <$ reserve identifierStyle n
 
   solo :: IdentifierParsing f => a -> String -> f a
   solo fn n = fn <$ reserve identifierStyle n
@@ -41,7 +41,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     let (mods, terminals) = partitionEithers specs
     let modifier = appEndo (mconcat mods)
     -- TODO: dropping multiple terminals on the floor
-    let typ' = if null terminals then C.iInt else (head terminals)
+    let typ' = if null terminals then C.iInt else head terminals
     return $ modifier typ'
   
   parsePointer :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
@@ -49,7 +49,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
     quals <- many parseModifier
     let ordered = quals ++ [ptr]
-    return $ mconcat $ ordered
+    return $ mconcat ordered
   
   
   parseAppendix :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
@@ -64,8 +64,8 @@ module Language.Bracer.Backends.C.Parser.Types where
   parseTypedef = do
     (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
-    case (M.lookup nam table) of
-      Just val -> return $ deepInject <$> C._typedefChildType $ unTerm $ val
+    case M.lookup nam table of
+      Just val -> return $ deepInject <$> C._typedefChildType $ unTerm val
       Nothing -> fail "typedef not found"
   
   parseArrayPostamble :: (Functor f, LiteralSig :<: f, ModifiedType :<: f) => CParser (Endo (Term f))
@@ -112,7 +112,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     parseTypeName = do
       specs <- parseSpecifierList
       ptrs <- (mconcat . reverse) <$> many parsePointer
-      return $ appEndo ptrs $ specs
+      return $ appEndo ptrs specs
   
   
   instance VariableParsing CParser where
@@ -123,4 +123,4 @@ module Language.Bracer.Backends.C.Parser.Types where
       preamble <- parseSpecifierList
       ptrs <- foldMany parsePointer
       declarator <- parseDeclarator
-      return $ (appEndo declarator) $ ptrs $ preamble
+      return $ appEndo declarator $ ptrs preamble
