@@ -2,6 +2,7 @@ module Language.Bracer.Parsing
   ( LiteralParsing (..) 
   , IdentifierParsing (..)
   , TypeParsing (..)
+  , TypeSig
   , VariableParsing (..)
   , ExpressionParsing (..)
   , StatementParsing (..)
@@ -53,15 +54,31 @@ module Language.Bracer.Parsing
                     , VariableSig   :<: f
                     , FunctionSig   :<: f
                     ) => m (Term f)
-    
+                    
+  type TypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
+  
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
   class (TypeParsing m) => ExpressionParsing m where
     type ExpressionSig :: * -> *
-    parsePrefixOperator :: m (Term ExpressionSig)
-    parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
-    infixOperatorTable :: E.OperatorTable m (Term ExpressionSig)
+    type OperatorSig :: * -> *
+    parsePrefixOperator :: ( Functor f
+                           , IdentifierSig :<: f
+                           , ExpressionSig :<: f
+                           , OperatorSig :<: f
+                           , LiteralSig :<: f) => m (Term f)
+    
+    parsePostfixOperator :: ( Functor f
+                            , IdentifierSig :<: f
+                            , ExpressionSig :<: f
+                            , OperatorSig :<: f
+                            , LiteralSig :<: f
+                            ) => m (Term f -> Term f)
+    infixOperatorTable :: ( Functor f 
+                          , IdentifierSig :<: f
+                          , ExpressionSig :<: f
+                          , OperatorSig :<: f) => E.OperatorTable m (Term f)
   
   class (ExpressionParsing m) => StatementParsing m where
     type StatementSig :: * -> *

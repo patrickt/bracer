@@ -15,7 +15,8 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
-    type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator
+    type ExpressionSig = Expr
+    type OperatorSig = Operator
     
     parsePrefixOperator = choice 
       [ iDec <$ reserved "--"
@@ -32,7 +33,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     
     parsePostfixOperator = choice 
       [ iIndex <$$> brackets parseExpression
-      , iCall  <$$> parens (commaSep parseExpression)
+      , iCall  <$$> (parens (commaSep parseExpression))
       , parseAccessor
       , iUnary <$$> (iPostInc <$ reserved "++")
       , iUnary <$$> (iPostDec <$ reserved "--")
@@ -41,30 +42,30 @@ module Language.Bracer.Backends.C.Parser.Expressions where
         a <$$> b = (flip a) <$> b
         parseAccessor = do
           op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
-          nam <- deepInject <$> parseIdentifier
+          nam <- parseIdentifier
           return (\x -> iAccess x op nam)
     
     infixOperatorTable = []
   
-  parsePrimaryExpression :: CParser (Term ExpressionSig)
+  parsePrimaryExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, LiteralSig :<: f) => CParser (Term f)
   parsePrimaryExpression = choice 
-    [ deepInject <$> parseIdentifier
-    , deepInject <$> parseLiteral
-    , iParen     <$> parens parseExpression
+    [ parseIdentifier
+    , parseLiteral
+    -- , iParen     <$> parens parseExpression
     ]
-  
-  parsePostfixExpression :: CParser (Term ExpressionSig)
+   
+  parsePostfixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
   parsePostfixExpression = do
     subject <- parsePrimaryExpression
     postfixes <- many parsePostfixOperator
     return $ foldl (>>>) id postfixes subject
   
-  parsePrefixExpression :: CParser(Term ExpressionSig)
+  parsePrefixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
   parsePrefixExpression = foldl (<<<) id <$> (many (iUnary <$> parsePrefixOperator)) <*> parsePostfixExpression
   
-  parseInfixExpression :: CParser (Term ExpressionSig)
+  parseInfixExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
   parseInfixExpression = E.buildExpressionParser infixOperatorTable parsePrefixExpression
   
-  parseExpression :: CParser (Term ExpressionSig)
+  parseExpression :: (Functor f, ExpressionSig :<: f, IdentifierSig :<: f, OperatorSig :<: f, LiteralSig :<: f) => CParser (Term f)
   parseExpression = parseInfixExpression
   

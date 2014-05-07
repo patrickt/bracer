@@ -22,8 +22,6 @@ module Language.Bracer.Test.C (tests) where
   shouldn'tParse :: (ShowF a, EqF a, Functor a) => Result (Term a) -> Assertion
   shouldn'tParse res = res `shouldSatisfy` (isn't _Success)
   
-  type TypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
-  
   tests :: Spec
   tests = describe "C" $ do
     
