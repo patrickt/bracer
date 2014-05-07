@@ -14,24 +14,14 @@ module Language.Bracer.Backends.C.Parser.Types where
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
-  -- endo :: (Term TypeSig -> Term TypeSig) -> String -> CParser (Endo (Term TypeSig))
+  endo :: IdentifierParsing f => (a -> a) -> String -> f (Endo a)
   endo fn n = (Endo fn) <$ reserve identifierStyle n
-  -- 
-  -- solo :: Term TypeSig -> String -> CParser (Term TypeSig)
+
+  solo :: IdentifierParsing f => a -> String -> f a
   solo fn n = fn <$ reserve identifierStyle n
   
   foldMany :: Alternative f => f (Endo a) -> f (a -> a)
   foldMany p = appEndo <$> mconcat <$> many p
-  
-  -- 
-  -- 
-  -- -- class (IdentifierParsing m, LiteralParsing m) => CTypeParsing m where
-  -- --   type CTypeSig :: * -> *
-  -- --   parsePreamble :: m (Term CTypeSig)
-  -- --   parsePointer :: m (Endo (Term CTypeSig))
-  -- --   parseDeclarator :: m (Endo (Term CTypeSig))
-  -- --   parseAppendix :: m (Endo (Term CTypeSig))
-  -- 
   
   parseDeclarator :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
   parseDeclarator = do
@@ -63,15 +53,20 @@ module Language.Bracer.Backends.C.Parser.Types where
   
   
   parseAppendix :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
-  parseAppendix = choice [ parseFunctionPostamble, parseArrayPostamble ]
-  -- 
-  -- instance Show (Endo a) where show _ = "<endofunctor>"
-  -- 
+  parseAppendix = parseFunctionPostamble <|> parseArrayPostamble
+  
   parseFunctionPostamble :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
   parseFunctionPostamble = do
     funcs <- parens (parseVariable `sepBy` comma)
     return (Endo $ \x -> C.iFunction Anonymous x funcs)
-
+  
+  parseTypedef :: (Functor f, Typedef :<: f) => CParser (Term f)
+  parseTypedef = do
+    (Ident nam) <- unTerm <$> try parseIdentifier
+    table <- gets _typedefTable
+    case (M.lookup nam table) of
+      Just val -> return $ deepInject <$> C._typedefChildType $ unTerm $ val
+      Nothing -> fail "typedef not found"
   
   parseArrayPostamble :: (Functor f, LiteralSig :<: f, ModifiedType :<: f) => CParser (Endo (Term f))
   parseArrayPostamble = do
@@ -106,7 +101,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     , solo C.iFloat "float"
     , solo C.iDouble "double"
     , solo C.iBool "_Bool"
-    -- , parseTypedef <?> "typedef"
+    , parseTypedef <?> "typedef"
     ]
   
   instance TypeParsing CParser where
@@ -129,26 +124,3 @@ module Language.Bracer.Backends.C.Parser.Types where
       ptrs <- foldMany parsePointer
       declarator <- parseDeclarator
       return $ (appEndo declarator) $ ptrs $ preamble
-
-  -- instance TypeParsing CParser where
-  --   type TypeSig = C.BaseType :+: C.ModifiedType :+: C.Type :+: C.Typedef :+: Literal :+: C.Function :+: Variable
-  --       -- 
-    -- parseTypeName = do
-    --   specs <- parseSpecifierList
-    --   ptrs <- (mconcat . reverse) <$> many parsePointer
-    --   return $ appEndo ptrs $ specs
-  --   
-  --   parseVariable = do
-  --     preamble <- parseSpecifierList
-  --     ptrs <- foldMany parsePointer
-  --     declarator <- parseDeclarator
-  --     return $ (appEndo declarator) $ ptrs $ preamble
-  -- 
-  
-  -- parseTypedef :: CParser (Term TypeSig)
-  -- parseTypedef = do
-  --   (Ident nam) <- unTerm <$> try parseIdentifier
-  --   table <- gets _typedefTable
-  --   case (M.lookup nam table) of
-  --     Just val -> return $ (Term $ C._typedefChildType val)
-  --     Nothing -> empty
