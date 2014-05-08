@@ -11,10 +11,10 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  build-depends:       base >=4.6 && <4.7
+  build-depends:       base >=4.6 && <4.8
                      , ansi-wl-pprint == 0.6.7.*
                      , bytestring == 0.10.4.*
-                     , compdata == 0.7.0.1
+                     , compdata == 0.8.*
                      , hashable == 1.2.1.*
                      , data-default == 0.5.*
                      , lens == 4.1.2
@@ -28,7 +28,8 @@ library
 
   default-language:    Haskell2010
 
-  default-extensions:  DeriveFunctor
+  default-extensions:  ConstraintKinds
+                     , DeriveFunctor
                      , DeriveFoldable
                      , DeriveGeneric
                      , DeriveTraversable
@@ -65,11 +66,11 @@ library
   other-modules:       Overture
 
 executable test
-  build-depends:       base >=4.6 && <4.7
+  build-depends:       base >=4.6 && <4.8
                     , bracer
                     , ansi-wl-pprint == 0.6.7.*
                     , bytestring == 0.10.4.*
-                    , compdata == 0.7.0.1
+                    , compdata == 0.8.*
                     , hashable == 1.2.1.*
                     , data-default == 0.5.*
                     , lens == 4.1.2
@@ -86,7 +87,8 @@ executable test
 
   default-language:    Haskell2010
 
-  default-extensions:  DeriveFunctor
+  default-extensions:  ConstraintKinds
+                     , DeriveFunctor
                      , DeriveFoldable
                      , DeriveGeneric
                      , DeriveTraversable

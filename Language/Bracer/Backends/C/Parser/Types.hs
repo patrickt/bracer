@@ -1,6 +1,6 @@
 module Language.Bracer.Backends.C.Parser.Types where
   
-  import Prelude ()
+  import Prelude (undefined)
   import Overture hiding (try)
   
   import Language.Bracer
@@ -20,10 +20,10 @@ module Language.Bracer.Backends.C.Parser.Types where
   solo :: IdentifierParsing f => a -> String -> f a
   solo fn n = fn <$ reserve identifierStyle n
   
-  foldMany :: Alternative f => f (Endo a) -> f (a -> a)
-  foldMany p = appEndo <$> mconcat <$> many p
+  -- foldMany :: Alternative f => f (Endo a) -> f (a -> a)
+  foldMany p = undefined
   
-  parseDeclarator :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
+
   parseDeclarator = do
     buildPointers <- foldMany parsePointer
     body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
@@ -35,7 +35,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   
   -- specifier :: CParser (Either (Term ))
   
-  parseSpecifierList :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
+  -- parseSpecifierList :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
   parseSpecifierList = do
     specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
     let (mods, terminals) = partitionEithers specs
@@ -44,7 +44,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     let typ' = if null terminals then C.iInt else head terminals
     return $ modifier typ'
   
-  parsePointer :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
+  -- parsePointer :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
   parsePointer = do 
     ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
     quals <- many parseModifier
@@ -52,15 +52,16 @@ module Language.Bracer.Backends.C.Parser.Types where
     return $ mconcat ordered
   
   
-  parseAppendix :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
-  parseAppendix = parseFunctionPostamble <|> parseArrayPostamble
+  parseAppendix :: CParser (Endo (Term VariableSig))
+  -- parseAppendix = (deepInject <$> parseFunctionPostamble) <|> (deepInject <$> parseArrayPostamble)
+  parseAppendix = undefined
   
-  parseFunctionPostamble :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f, Variable :<: f, Function :<: f, Literal :<: f, Ident :<: f) => CParser (Endo (Term f))
+  parseFunctionPostamble :: CParser (Endo (Term VariableSig))
   parseFunctionPostamble = do
     funcs <- parens (parseVariable `sepBy` comma)
     return (Endo $ \x -> C.iFunction Anonymous x funcs)
   
-  parseTypedef :: (Functor f, Typedef :<: f) => CParser (Term f)
+  -- parseTypedef :: (Functor f, Typedef :<: f) => CParser (Term f)
   parseTypedef = do
     (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
@@ -68,12 +69,15 @@ module Language.Bracer.Backends.C.Parser.Types where
       Just val -> return $ deepInject <$> C._typedefChildType $ unTerm val
       Nothing -> fail "typedef not found"
   
-  parseArrayPostamble :: (Functor f, LiteralSig :<: f, ModifiedType :<: f) => CParser (Endo (Term f))
+  parseArrayPostamble :: (LiteralSig :<: VariableSig) => CParser (Endo (Term VariableSig))
   parseArrayPostamble = do
-    bracks <- brackets (optional parseLiteral)
+    
+    let plit = (deepInject <$> parseLiteral) :: CParser (Term VariableSig)
+    bracks <- brackets (optional plit)
+    let reBracks = ()
     return $ Endo $ C.iArray bracks
   
-  parseModifier :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
+  -- parseModifier :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
   parseModifier = choice 
     [ endo typedef "typedef"
     , endo C.iExtern "extern"
@@ -91,7 +95,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     , endo C.iComplex "_Complex"
     ] where typedef a = C.iTypedef a Anonymous
   
-  parseRootType :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
+  -- parseRootType :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
   parseRootType = choice 
     [ solo C.iVoid "void"
     , solo C.iChar "char"
@@ -105,21 +109,16 @@ module Language.Bracer.Backends.C.Parser.Types where
     ]
   
   instance TypeParsing CParser where
-    type BaseSig     = BaseType
-    type ModifierSig = ModifiedType
-    type AliasSig    = Typedef
+    type TypeSig = Literal :+: BaseType :+: ModifiedType :+: Typedef :+: Variable
     
     parseTypeName = do
       specs <- parseSpecifierList
       ptrs <- (mconcat . reverse) <$> many parsePointer
       return $ appEndo ptrs specs
-
-  type CTypeSig = LiteralSig :+: IdentifierSig :+: BaseSig :+: ModifierSig :+: AliasSig
   
   
   instance VariableParsing CParser where
-    type VariableSig = Variable
-    type FunctionSig = Function
+    type VariableSig = Literal :+: BaseType :+: ModifiedType :+: Typedef :+: Variable :+: Function
     
     parseVariable = do
       preamble <- parseSpecifierList

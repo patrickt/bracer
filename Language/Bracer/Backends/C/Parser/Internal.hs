@@ -22,11 +22,11 @@ module Language.Bracer.Backends.C.Parser.Internal where
              , Alternative
              , Monad
              , MonadPlus
-             , Parsing
              , CharParsing
              , DeltaParsing
              , MonadState Environment
              )
+  deriving instance Parsing CParser
   
   data Environment = Environment
     { _typedefTable :: forall f . HashMap Name (Term f)
