@@ -16,7 +16,7 @@ module Language.Bracer.Backends.C.Parser.Statements where
   parseExpression' = deepInject <$> parseExpression
   
   instance StatementParsing CParser where
-    type StatementSig = C.Statement :+: Literal :+: BaseType :+: ModifiedType :+: Typedef :+: Variable :+: Function :+: Ident :+: Expr :+: Operator
+    type StatementSig = C.Statement :+: Literal :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function :+: Ident :+: Expr :+: Operator
     
     parseStatement = choice
       [ C.iBreak <$ reserved "break"

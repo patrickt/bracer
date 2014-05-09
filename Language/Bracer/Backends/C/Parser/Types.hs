@@ -14,54 +14,43 @@ module Language.Bracer.Backends.C.Parser.Types where
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
-  endo :: IdentifierParsing f => (a -> a) -> String -> f (Endo a)
-  endo fn n = Endo fn <$ reserve identifierStyle n
-
-  solo :: IdentifierParsing f => a -> String -> f a
-  solo fn n = fn <$ reserve identifierStyle n
+  type CTypeSig = Literal :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
   
-  -- foldMany :: Alternative f => f (Endo a) -> f (a -> a)
-  foldMany p = undefined
+  instance TypeParsing CParser where
+    type TypeSig = CTypeSig
+        
+    parseTypeName = do
+      specs <- parseSpecifierList
+      ptrs <- (mconcat . reverse) <$> many parsePointer
+      return $ appEndo ptrs specs
   
-
-  parseDeclarator = do
-    buildPointers <- foldMany parsePointer
-    body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
-    append <- foldMany parseAppendix
-    return $ Endo $ case body of
-      (Left n) -> iVariable n . buildPointers
-      (Right dec) -> appEndo dec . append . buildPointers
-  -- 
+  instance VariableParsing CParser where
+    type VariableSig = CTypeSig
+        
+    parseVariable = do
+      preamble <- parseSpecifierList
+      ptrs <- foldMany parsePointer
+      declarator <- parseDeclarator
+      return $ appEndo declarator $ ptrs preamble
   
-  -- specifier :: CParser (Either (Term ))
+  -- | Parses 'BaseType' specifiers: any specifier that cannot modify other types,
+  -- | like @void@, @char@, @int@, previously specified @typedef@s, and so on.
+  -- | This is a subset of the C99 grammar for type specifiers.
+  parseBaseType :: CParser (Term CTypeSig)
+  parseBaseType = choice 
+    [ solo C.iVoid "void"
+    , solo C.iChar "char"
+    , solo C.iInt "int"
+    , solo C.iInt128 "__int128_t"
+    , solo (C.iUnsigned C.iInt128) "__uint128_t"
+    , solo C.iFloat "float"
+    , solo C.iDouble "double"
+    , solo C.iBool "_Bool"
+    , parseTypedef <?> "typedef"
+    ] where solo fn n = fn <$ reserve identifierStyle n
   
-  -- parseSpecifierList :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
-  parseSpecifierList = do
-    specs <- some ((Left <$> parseModifier) <|> (Right <$> parseRootType))
-    let (mods, terminals) = partitionEithers specs
-    let modifier = appEndo (mconcat mods)
-    -- TODO: dropping multiple terminals on the floor
-    let typ' = if null terminals then C.iInt else head terminals
-    return $ modifier typ'
-  
-  -- parsePointer :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
-  parsePointer = do 
-    ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
-    quals <- many parseModifier
-    let ordered = quals ++ [ptr]
-    return $ mconcat ordered
-  
-  
-  parseAppendix :: CParser (Endo (Term VariableSig))
-  -- parseAppendix = (deepInject <$> parseFunctionPostamble) <|> (deepInject <$> parseArrayPostamble)
-  parseAppendix = undefined
-  
-  parseFunctionPostamble :: CParser (Endo (Term VariableSig))
-  parseFunctionPostamble = do
-    funcs <- parens (parseVariable `sepBy` comma)
-    return (Endo $ \x -> C.iFunction Anonymous x funcs)
-  
-  -- parseTypedef :: (Functor f, Typedef :<: f) => CParser (Term f)
+  -- | Attempts to parse a valid, previously-defined typedef.
+  parseTypedef :: CParser (Term CTypeSig)
   parseTypedef = do
     (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
@@ -69,15 +58,10 @@ module Language.Bracer.Backends.C.Parser.Types where
       Just val -> return $ deepInject <$> C._typedefChildType $ unTerm val
       Nothing -> fail "typedef not found"
   
-  parseArrayPostamble :: (LiteralSig :<: VariableSig) => CParser (Endo (Term VariableSig))
-  parseArrayPostamble = do
-    
-    let plit = (deepInject <$> parseLiteral) :: CParser (Term VariableSig)
-    bracks <- brackets (optional plit)
-    let reBracks = ()
-    return $ Endo $ C.iArray bracks
-  
-  -- parseModifier :: (Functor f, ModifiedType :<: f, Typedef :<: f) => CParser (Endo (Term f))
+  -- | Parses 'TypeModifier' specifiers: any storage-class specifier, type qualifier, or 
+  -- type specifier that can be applied to another type. If no type is specified, @int@ 
+  -- will be provided (e.g. @short@ is the same as @short int@).
+  parseModifier :: CParser (Endo (Term CTypeSig))
   parseModifier = choice 
     [ endo typedef "typedef"
     , endo C.iExtern "extern"
@@ -93,35 +77,56 @@ module Language.Bracer.Backends.C.Parser.Types where
     , endo C.iSigned "signed"
     , endo C.iUnsigned "unsigned"
     , endo C.iComplex "_Complex"
-    ] where typedef a = C.iTypedef a Anonymous
+    ] where 
+      typedef a = C.iTypedef a Anonymous
+      endo fn n = Endo fn <$ reserve identifierStyle n
   
-  -- parseRootType :: (Functor f, BaseType :<: f, ModifiedType :<: f, Typedef :<: f) => CParser (Term f)
-  parseRootType = choice 
-    [ solo C.iVoid "void"
-    , solo C.iChar "char"
-    , solo C.iInt "int"
-    , solo C.iInt128 "__int128_t"
-    , solo (C.iUnsigned C.iInt128) "__uint128_t"
-    , solo C.iFloat "float"
-    , solo C.iDouble "double"
-    , solo C.iBool "_Bool"
-    , parseTypedef <?> "typedef"
-    ]
+  -- | Parses a list of base types and modifiers and combines them into a single type.
+  -- TODO: if multiple base types are passed (e.g. @long double double@) this will 
+  -- silently drop them on the floor. I can't figure out how to warn with Trifecta yet.
+  parseSpecifierList :: CParser (Term CTypeSig)
+  parseSpecifierList = do
+    let parseTypeSpecifier = (Left <$> parseModifier) <|> (Right <$> parseBaseType)
+    (modifiers, roots) <- partitionEithers <$> some parseTypeSpecifier
+    let modifier = appEndo $ mconcat modifiers
+    -- TODO: dropping multiple terminals on the floor
+    let typ' = if null roots then C.iInt else head roots
+    return $ modifier typ'
   
-  instance TypeParsing CParser where
-    type TypeSig = Literal :+: BaseType :+: ModifiedType :+: Typedef :+: Variable
+  -- | Parses a pointer, possibly qualified with a modifier such as @const@ or @volatile@.
+  parsePointer :: CParser (Endo (Term CTypeSig))
+  parsePointer = do 
+    ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
+    quals <- many parseModifier
+    let ordered = quals ++ [ptr]
+    return $ mconcat ordered
     
-    parseTypeName = do
-      specs <- parseSpecifierList
-      ptrs <- (mconcat . reverse) <$> many parsePointer
-      return $ appEndo ptrs specs
+  -- | Parses an argument list for a function type. 
+  parseFunctionAppendix :: CParser (Endo (Term CTypeSig))
+  parseFunctionAppendix = do
+    funcs <- parens (parseVariable `sepBy` comma)
+    return (Endo $ \x -> C.iFunction Anonymous x funcs)
   
+  -- | Parses an array modifier with an optional length.
+  parseArrayAppendix :: CParser (Endo (Term CTypeSig))
+  parseArrayAppendix = do
+    let plit = deepInject <$> parseLiteral
+    bracks <- brackets (optional plit)
+    let reBracks = ()
+    return $ Endo $ C.iArray bracks
   
-  instance VariableParsing CParser where
-    type VariableSig = Literal :+: BaseType :+: ModifiedType :+: Typedef :+: Variable :+: Function
-    
-    parseVariable = do
-      preamble <- parseSpecifierList
-      ptrs <- foldMany parsePointer
-      declarator <- parseDeclarator
-      return $ appEndo declarator $ ptrs preamble
+  -- | Parses an optionally-named declarator. If a name is present, it will
+  -- return a 'Variable', otherwise it will return a type.
+  parseDeclarator :: CParser (Endo (Term CTypeSig))
+  parseDeclarator = do
+    buildPointers <- foldMany parsePointer
+    body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
+    append <- foldMany (parseFunctionAppendix <|> parseArrayAppendix)
+    return $ Endo $ case body of
+      (Left n) -> iVariable n . buildPointers
+      (Right dec) -> appEndo dec . append . buildPointers
+  
+  -- Helper function that runs an 'Endo'-returning parser then concatenates and unwraps the result.
+  foldMany :: Alternative f => f (Endo a) -> f (a -> a)
+  foldMany p = appEndo <$> mconcat <$> many p
+  

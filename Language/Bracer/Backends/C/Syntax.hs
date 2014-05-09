@@ -43,7 +43,7 @@ module Language.Bracer.Backends.C.Syntax where
     -- should Typedef go in here? I can't decide
     deriving (Show, Eq, Functor)
   
-  data ModifiedType a 
+  data TypeModifier a 
     = Array (Maybe a) a
     | Auto a
     | Complex a
@@ -177,7 +177,7 @@ module Language.Bracer.Backends.C.Syntax where
   derive 
     [ smartConstructors, makeShowF, makeEqF ] 
     [ ''BaseType
-    , ''ModifiedType
+    , ''TypeModifier
     , ''Type
     , ''Typedef
     , ''Composite
@@ -203,5 +203,5 @@ module Language.Bracer.Backends.C.Syntax where
   instance HasName (Composite a) where
     name = compositeName
   
-  iUInt128 :: (BaseType :<: f, ModifiedType :<: f) => Cxt h f a
+  iUInt128 :: (BaseType :<: f, TypeModifier :<: f) => Cxt h f a
   iUInt128 = iUnsigned iInt128

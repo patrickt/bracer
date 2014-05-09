@@ -50,7 +50,7 @@ instance PrettyAlg BaseType where
   prettyA (Union (Just n)) = "union" <+> pretty n
   prettyA Void = "void"
 
-instance PrettyAlg ModifiedType where
+instance PrettyAlg TypeModifier where
   -- this isn't right but it will do for now
   prettyA (Array siz typ) = typ <> brackets (pretty siz)
   prettyA (Auto t) = "auto" <+> t
@@ -62,6 +62,7 @@ instance PrettyAlg ModifiedType where
   prettyA (Pointer t) = t <> "*"
   prettyA (Register t) = "register" <+> t
   prettyA (Restrict t) = "restrict" <+> t
+  prettyA (Signed t) = "signed" <+> t
   prettyA (Short t) = "short" <+> t
   prettyA (Static t) = "static" <+> t
   prettyA (Unsigned t) = "unsigned" <+> t
