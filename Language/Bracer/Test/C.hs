@@ -25,7 +25,7 @@ module Language.Bracer.Test.C (tests) where
     
     describe "token parser" $ do
       it "ignores traditional comments" $
-        runCParser (whiteSpace *> parseLiteral <* eof) "1 /* comment */" `shouldParseAs` (iIntLit 1 :: Term Literal)
+        runCParser (whiteSpace *> parseLiteral <* eof) "/* comment */ 1" `shouldParseAs` (iIntLit 1 :: Term Literal)
       it "ignores C++ style comments" $ 
         runCParser (whiteSpace *> parseLiteral <* eof) "1 // comment" `shouldParseAs` (iIntLit 1 :: Term Literal)
     
@@ -38,15 +38,13 @@ module Language.Bracer.Test.C (tests) where
         runCParser (parseLiteral <* eof) "'c'" `shouldParseAs` (iChrLit 'c' :: Term Literal)
 
       prop "parses any floating-point number" $ do
-        let parseLit = parseLiteral :: CParser (Term Literal)
         (NonNegative (s :: Scientific)) <- arbitrary
-        let res = runCParser (parseLit <* eof) (show s)
+        let res = runCParser (parseLiteral <* eof) (show s)
         shouldSucceed res
 
       prop "preserves floating-point numbers round trip" $ do
-        let parseLit = parseLiteral :: CParser (Term Literal)
         (NonNegative (s :: Scientific)) <- arbitrary
-        let res = runCParser (parseLit <* eof) (show s) ^? _Success
+        let res = runCParser (parseLiteral <* eof) (show s) ^? _Success
         putStrLn ("Expected " <> show s <> ", got " <> show res) `whenFail` (maybe False (== (iFltLit s)) res) 
 
 

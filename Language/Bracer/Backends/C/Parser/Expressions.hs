@@ -13,6 +13,8 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   
   reserved = reserve identifierStyle
   
+  type CExpressionSig = Literal :+: Ident :+: Expr :+: Operator
+  
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
     type ExpressionSig = Literal :+: Ident :+: Expr :+: Operator

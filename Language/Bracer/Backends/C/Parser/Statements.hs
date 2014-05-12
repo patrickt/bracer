@@ -9,14 +9,13 @@ module Language.Bracer.Backends.C.Parser.Statements where
   import Language.Bracer.Backends.C.Parser.Internal
   import Language.Bracer.Backends.C.Parser.Expressions
   import Text.Trifecta
+  import Language.Bracer.Backends.C.Parser.Types
 
-  -- blockItem :: (IsStatement f, IsVariable f) => CParser (Term f)
-  blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable, deepInject <$> parseExpression]
-  
-  parseExpression' = deepInject <$> parseExpression
+  blockItem :: CParser (Term StatementSig)
+  blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
   
   instance StatementParsing CParser where
-    type StatementSig = C.Statement :+: Literal :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function :+: Ident :+: Expr :+: Operator
+    type StatementSig = Statement :+: CTypeSig :+: CExpressionSig
     
     parseStatement = choice
       [ C.iBreak <$ reserved "break"
@@ -32,6 +31,6 @@ module Language.Bracer.Backends.C.Parser.Statements where
       -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
       , C.iSwitch <$> (reserved "switch" *> parens parseExpression') <*> parseStatement
       , C.iWhile <$> (reserved "while" *> parens parseExpression') <*> parseStatement
-      -- , parseExpression
+      , parseExpression'
       , pure C.iEmpty 
-      ]
+      ] where parseExpression' = deepInject <$> parseExpression
