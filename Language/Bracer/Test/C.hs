@@ -15,6 +15,7 @@ module Language.Bracer.Test.C (tests) where
   import Text.Trifecta
   import Data.Comp.Show
   import Data.Scientific
+  import qualified Data.Vector as V
   
   import Language.Bracer
   import Language.Bracer.Backends.C
@@ -105,6 +106,13 @@ module Language.Bracer.Test.C (tests) where
       it "parses break statements" $
         (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: Term StatementSig)
       
+      it "parses block items" $ do 
+        let p = runCParser parseBlock "return 1; return 2; return 3;"
+        p `shouldSatisfy` has _Success
+        let (Just (blk :: Statement (Term StatementSig))) = project $ p ^?! _Success 
+        blk `shouldSatisfy` has _Block
+        let vec = blk ^. _Block & lengthOf each
+        vec `shouldBe` 3
       
       
       

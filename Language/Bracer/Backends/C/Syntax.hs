@@ -22,17 +22,17 @@ module Language.Bracer.Backends.C.Syntax where
     | FltLit { _floatingValue :: Scientific, _suffix :: a}
     | ChrLit { _charValue :: O.Char }
     | StrLit { _stringValue :: ByteString }
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
   
   data Suffix a 
     = LongSuffix a
     | UnsignedSuffix a
     | FloatSuffix a
     | NoSuffix
-    deriving (Show, Functor)
+    deriving (Show, Eq, Functor)
   
   newtype Ident a = Ident Name 
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
   
   data BaseType a
     = Bool
@@ -66,41 +66,41 @@ module Language.Bracer.Backends.C.Syntax where
     | Static a
     | Unsigned a
     | Volatile a
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
   
   data Type a = Type
     { _typeContents :: a
     , _typeSize :: Maybe a
     , _typeAttributes :: [a]
-    } deriving (Functor)
+    } deriving (Show, Eq, Functor)
   
   data Typedef a = Typedef
     { _typedefChildType :: a
     , _typedefName :: Name
-    } deriving (Functor)
+    } deriving (Show, Eq, Functor)
   
   data Composite a = Composite
     { _compositeKind :: a
     , _compositeName :: Name
     , _compositeMembers :: [a]
-    } deriving (Functor)
+    } deriving (Show, Eq, Functor)
   
   data Function a = Function
     { _functionName :: Name
     , _functionReturnType :: a
     , _functionParameters :: [a]
-    } deriving (Functor)
+    } deriving (Show, Eq, Functor)
   
   data Declaration a
     = VariableDecl a
     | FunctionDecl a
     | MultipleDecl [a]
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
 
   data Definition a
     = VariableDefn a a
     | FunctionDefn a [a]
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
     
   data Expr a 
     = Unary 
@@ -133,7 +133,7 @@ module Language.Bracer.Backends.C.Syntax where
     | Paren
       { _target :: a
       }
-    deriving (Functor, Foldable)
+    deriving (Show, Eq, Functor, Foldable)
     
   data Statement a 
     = Block (Vector a)
@@ -150,7 +150,7 @@ module Language.Bracer.Backends.C.Syntax where
     | Return (Maybe a)
     | Switch a a
     | While a a
-    deriving (Functor)
+    deriving (Show, Eq, Functor)
   
   data Operator a 
     = Add 

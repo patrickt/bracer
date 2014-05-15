@@ -17,6 +17,9 @@ module Language.Bracer.Backends.C.Parser.Identifiers where
     identifierStyle = c99Idents
     parseIdentifier = iIdent <$> parseName <?> "identifier"
   
+  infixl 4 **>
+  a **> b = reserve identifierStyle a *> b
+  
   c99Idents :: TokenParsing m => IdentifierStyle m
   c99Idents = haskellIdents 
     { _styleReserved = fromList 
