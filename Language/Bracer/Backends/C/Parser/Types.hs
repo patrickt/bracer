@@ -14,7 +14,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
-  type CTypeSig = Literal :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
+  type CTypeSig = Literal :+: Suffix :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
   
   instance TypeParsing CParser where
     type TypeSig = CTypeSig

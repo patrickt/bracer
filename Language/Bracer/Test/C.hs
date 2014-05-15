@@ -23,19 +23,37 @@ module Language.Bracer.Test.C (tests) where
   tests :: Spec
   tests = describe "C" $ do
     
+    let testInt = iIntLit 1 iNoSuffix :: Term LiteralSig
+    let testFlt = iFltLit 1.0 iNoSuffix :: Term LiteralSig
+    let testFlt2 = iFltLit (127.8) (iFloatSuffix iNoSuffix) :: Term LiteralSig
+    let testFlt3 = iFltLit (616.6e100) iNoSuffix :: Term LiteralSig
+    let testFlt4 = iFltLit (100e-100) iNoSuffix :: Term LiteralSig
+    let testChr = iChrLit 'c' :: Term LiteralSig
+    
     describe "token parser" $ do
       it "ignores traditional comments" $
-        runCParser (whiteSpace *> parseLiteral <* eof) "/* comment */ 1" `shouldParseAs` (iIntLit 1 :: Term Literal)
+        runCParser (whiteSpace *> parseLiteral <* eof) "/* comment */ 1" `shouldParseAs` testInt
       it "ignores C++ style comments" $ 
-        runCParser (whiteSpace *> parseLiteral <* eof) "1 // comment" `shouldParseAs` (iIntLit 1 :: Term Literal)
+        runCParser (whiteSpace *> parseLiteral <* eof) "1 // comment" `shouldParseAs` testInt
     
     describe "literal parser" $ do
       it "parses integers" $
-        runCParser (parseLiteral <* eof) "1" `shouldParseAs` (iIntLit 1 :: Term Literal)
+        runCParser (parseLiteral <* eof) "1" `shouldParseAs` testInt
       it "parses floats" $
-        runCParser (parseLiteral <* eof) "1.0" `shouldParseAs` (iFltLit 1.0 :: Term Literal)
+        runCParser (parseLiteral <* eof) "1.0" `shouldParseAs` testFlt
       it "parses characters" $
-        runCParser (parseLiteral <* eof) "'c'" `shouldParseAs` (iChrLit 'c' :: Term Literal)
+        runCParser (parseLiteral <* eof) "'c'" `shouldParseAs` testChr
+      
+      it "parses floats with suffixes" $
+        runCParser (parseLiteral <* eof) "127.8f" `shouldParseAs` testFlt2
+        
+      it "parses floats with exponent parts" $ do
+        runCParser (parseLiteral <* eof) "616.6e100" `shouldParseAs` testFlt3
+        runCParser (parseLiteral <* eof) "616.6e+100" `shouldParseAs` testFlt3
+      
+      it "parses floats with negative exponent parts" $ do
+        runCParser (parseLiteral <* eof) "100.0e-100" `shouldParseAs` testFlt4
+        runCParser (parseLiteral <* eof) "100e-100" `shouldParseAs` testFlt4
 
       prop "parses any floating-point number" $ do
         (NonNegative (s :: Scientific)) <- arbitrary
@@ -45,7 +63,7 @@ module Language.Bracer.Test.C (tests) where
       prop "preserves floating-point numbers round trip" $ do
         (NonNegative (s :: Scientific)) <- arbitrary
         let res = runCParser (parseLiteral <* eof) (show s) ^? _Success
-        putStrLn ("Expected " <> show s <> ", got " <> show res) `whenFail` (maybe False (== (iFltLit s)) res) 
+        putStrLn ("Expected " <> show s <> ", got " <> show res) `whenFail` (maybe False (== (iFltLit s iNoSuffix)) res) 
 
 
     

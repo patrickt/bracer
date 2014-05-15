@@ -18,11 +18,18 @@ module Language.Bracer.Backends.C.Syntax where
   import Data.Vector
   
   data Literal a 
-    = IntLit Integer
-    | FltLit Scientific
-    | ChrLit O.Char
-    | StrLit ByteString
+    = IntLit { _integerValue :: Integer, _suffix :: a}
+    | FltLit { _floatingValue :: Scientific, _suffix :: a}
+    | ChrLit { _charValue :: O.Char }
+    | StrLit { _stringValue :: ByteString }
     deriving (Functor)
+  
+  data Suffix a 
+    = LongSuffix a
+    | UnsignedSuffix a
+    | FloatSuffix a
+    | NoSuffix
+    deriving (Show, Functor)
   
   newtype Ident a = Ident Name 
     deriving (Functor)
@@ -189,9 +196,10 @@ module Language.Bracer.Backends.C.Syntax where
     , ''Literal
     , ''Expr
     , ''Ident
+    , ''Suffix
     ]
   
-  derive [ makeLenses ] [ ''Function, ''Composite, ''Expr ]
+  derive [ makeLenses ] [ ''Function, ''Composite, ''Expr, ''Literal ]
   derive [ makePrisms ] [ ''Ident ]
   
   instance HasName (Ident a) where

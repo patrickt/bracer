@@ -27,11 +27,17 @@ instance Pretty Name where
 deriving instance Pretty (Ident a)
 
 instance PrettyAlg Literal where 
-  prettyA (IntLit i) = pretty i
-  prettyA (FltLit f) = pretty f
+  prettyA (IntLit i s) = pretty i <> s
+  prettyA (FltLit f s) = pretty f <> s 
   -- if anyone can think of a better way to ensure characters are escaped, let me know
   prettyA (ChrLit c) = pretty $ show c
   prettyA (StrLit s) = dquotes $ pretty s
+
+instance PrettyAlg Suffix where
+  prettyA (LongSuffix s) = "l" <> s
+  prettyA (UnsignedSuffix s) = "u" <> s
+  prettyA (FloatSuffix s) = "f" <> s
+  prettyA NoSuffix = mempty
 
 instance PrettyAlg BaseType where
   prettyA Bool = "_Bool"
