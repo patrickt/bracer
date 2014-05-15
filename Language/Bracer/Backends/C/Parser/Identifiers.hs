@@ -8,13 +8,14 @@ module Language.Bracer.Backends.C.Parser.Identifiers where
   import Language.Bracer.Backends.C.Parser.Internal
   
   import Data.HashSet
+  import Text.Trifecta
   import Text.Parser.Token
   import Text.Parser.Token.Style
   
   instance IdentifierParsing CParser where
     type IdentifierSig = Ident
     identifierStyle = c99Idents
-    parseIdentifier = iIdent <$> parseName
+    parseIdentifier = iIdent <$> parseName <?> "identifier"
   
   c99Idents :: TokenParsing m => IdentifierStyle m
   c99Idents = haskellIdents 

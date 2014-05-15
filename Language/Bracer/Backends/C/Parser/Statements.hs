@@ -15,22 +15,23 @@ module Language.Bracer.Backends.C.Parser.Statements where
   blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
   
   instance StatementParsing CParser where
-    type StatementSig = Statement :+: CTypeSig :+: CExpressionSig
+    type StatementSig = CExpressionSig :+: Statement
+    
+    parseBlock = iBlock <$> (fromList <$> many parseStatement)
     
     parseStatement = choice
-      [ C.iBreak <$ reserved "break"
-      , C.iCase <$> parseExpression' <*> (colon *> parseStatement)
-      , C.iContinue <$ reserved "continue"
+      [ C.iBreak <$ reserved "break;"
+      , C.iCase <$> (reserved "case" *> parseExpression') <*> (colon *> parseStatement)
+      , C.iContinue <$ reserved "continue;"
       , C.iCompound <$> braces (fromList <$> many blockItem)
       , C.iDefault <$> (reserved "default" *> colon *> parseStatement)
-      -- For <$> ???? <*> ???? <*> braces (many ???)
-      , C.iGoto <$> (reserved "goto" *> (deepInject <$> parseIdentifier))
+      , C.iFor <$> (reserved "for" *> parens parseBlock) <*> parseStatement
+      , C.iGoto <$> (reserved "goto" *> (deepInject <$> parseIdentifier) <* semi)
       , C.iIfThenElse <$> (reserved "if" *> parens parseExpression') <*> parseStatement <*> optional (reserved "else" *> parseStatement)
       , C.iLabeled <$> parseName <*> (colon *> parseStatement)
-      , C.iReturn <$> optional parseExpression'
-      -- , C.iSemi <$> parseStatement <*> (semi *> parseStatement)
+      , C.iReturn <$> (reserved "return" *> optional parseExpression' <* semi)
       , C.iSwitch <$> (reserved "switch" *> parens parseExpression') <*> parseStatement
       , C.iWhile <$> (reserved "while" *> parens parseExpression') <*> parseStatement
-      , parseExpression'
-      , pure C.iEmpty 
+      , parseExpression' <* semi
+      , C.iEmpty <$ semi
       ] where parseExpression' = deepInject <$> parseExpression

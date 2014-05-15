@@ -136,18 +136,18 @@ module Language.Bracer.Backends.C.Syntax where
     deriving (Functor, Foldable)
     
   data Statement a 
-    = Break
+    = Block (Vector a)
+    | Break
     | Case a a
     | Continue
     | Compound (Vector a)
     | Default a
     | Empty
-    | For a [a]
+    | For a a
     | Goto a
     | IfThenElse a a (Maybe a)
     | Labeled Name a
     | Return (Maybe a)
-    | Semi a a
     | Switch a a
     | While a a
     deriving (Functor)
@@ -200,7 +200,7 @@ module Language.Bracer.Backends.C.Syntax where
     ]
   
   derive [ makeLenses ] [ ''Function, ''Composite, ''Expr, ''Literal ]
-  derive [ makePrisms ] [ ''Ident ]
+  derive [ makePrisms ] [ ''Ident, ''Statement ]
   
   instance HasName (Ident a) where
     name = _Ident

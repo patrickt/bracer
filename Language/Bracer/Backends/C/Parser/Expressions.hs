@@ -13,7 +13,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   
   reserved = reserve identifierStyle
   
-  type CExpressionSig = Literal :+: Suffix :+: Ident :+: Expr :+: Operator
+  type CExpressionSig = CTypeSig :+: Ident :+: Expr :+: Operator
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
@@ -22,7 +22,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     parsePrefixOperator = choice 
       [ iDec <$ reserved "--"
       , iInc <$ reserved "++"
-      -- , try $ iCast <$> parens (inject <$> unTerm <$> parseTypeName)
+      , try $ iCast <$> parens (deepInject <$> parseTypeName)
       , iRef <$ reserved "&"
       , iDeref <$ reserved "*"
       , iPos <$ reserved "+"

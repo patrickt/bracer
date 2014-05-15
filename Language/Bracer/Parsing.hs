@@ -50,6 +50,7 @@ module Language.Bracer.Parsing
   class (VariableParsing m, ExpressionParsing m) => StatementParsing m where
     type StatementSig :: * -> *
     parseStatement :: m (Term StatementSig)
+    parseBlock :: m (Term StatementSig)
   
   class (StatementParsing m) => DeclarationParsing m where 
     type DeclarationSig :: * -> *

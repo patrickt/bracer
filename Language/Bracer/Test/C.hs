@@ -96,12 +96,14 @@ module Language.Bracer.Test.C (tests) where
         
       it "parses types with multiple qualified pointers" $ do
         runCParser parseTypeName "int * const * volatile" `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: Term CTypeSig)
-    --   
-    --   
-    -- 
-    -- describe "statement parser" $ do
-    --   it "parses break statements" $
-    --     (runCParser parseStatement "break") `shouldParseAs` (iBreak :: Term (ExpressionSig :+: StatementSig))
+      
+      
+    describe "statement parser" $ do
+      it "parses bare expressions" $ do
+        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: Term StatementSig)
+      
+      it "parses break statements" $
+        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: Term StatementSig)
       
       
       
