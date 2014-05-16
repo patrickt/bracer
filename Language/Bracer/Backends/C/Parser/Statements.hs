@@ -36,3 +36,5 @@ module Language.Bracer.Backends.C.Parser.Statements where
       , parseExp      <*  semi
       , C.iEmpty      <$  semi
       ] where parseExp = deepInject <$> parseExpression
+  
+  type StatementT = Term (StatementSig CParser)

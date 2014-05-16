@@ -24,7 +24,6 @@ module Language.Bracer.Test.C (tests) where
   type CLiteral = Term (LiteralSig CParser)
   type CIdent = Term (IdentifierSig CParser)
   type CType = Term (TypeSig CParser)
-  type CStatement = Term (StatementSig CParser)
 
   tests :: Spec
   tests = describe "C" $ do
@@ -106,15 +105,19 @@ module Language.Bracer.Test.C (tests) where
       
     describe "statement parser" $ do
       it "parses bare expressions" $ do
-        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: CStatement)
+        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: StatementT)
       
       it "parses break statements" $
-        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: CStatement)
+        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: StatementT)
+      
+      it "parses returns with and without values" $ do
+        (runCParser parseStatement "return;") `shouldParseAs` (iReturn Nothing :: StatementT)
+        (runCParser parseStatement "return 'c';") `shouldParseAs` (iReturn (Just (iChrLit 'c')) :: StatementT)
       
       it "parses block items" $ do 
         let p = runCParser parseBlock "return 1; return 2; return 3;"
         p `shouldSatisfy` has _Success
-        let (Just (blk :: Statement CStatement)) = project $ p ^?! _Success 
+        let (Just (blk :: Statement StatementT)) = project $ p ^?! _Success 
         blk `shouldSatisfy` has _Block
         let vec = blk ^. _Block & lengthOf each
         vec `shouldBe` 3
