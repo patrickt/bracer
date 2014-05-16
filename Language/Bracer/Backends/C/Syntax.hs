@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Language.Bracer.Backends.C.Syntax where
   
   -- This module is designed to be imported qualified

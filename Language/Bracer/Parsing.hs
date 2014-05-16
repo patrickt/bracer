@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Language.Bracer.Parsing 
   ( LiteralParsing (..) 
   , IdentifierParsing (..)

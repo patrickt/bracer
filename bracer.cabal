@@ -46,6 +46,7 @@ library
                      , TemplateHaskell
                      , TypeFamilies
                      , TypeOperators
+                     , UndecidableInstances
 
   exposed-modules:     Language.Bracer
                      , Language.Bracer.Parsing
@@ -106,6 +107,7 @@ executable test
                      , TemplateHaskell
                      , TypeFamilies
                      , TypeOperators
+                     , UndecidableInstances
 
   main-is:              Test.hs
 

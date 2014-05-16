@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Language.Bracer.Syntax.Names 
   ( Name (..)
   , _Name
@@ -23,4 +21,6 @@ module Language.Bracer.Syntax.Names
   
   makePrisms ''Name
     
-  instance IsString Name where fromString = Name . fromString
+  instance IsString Name where 
+    fromString "" = Anonymous
+    fromString st = Name (fromString st)

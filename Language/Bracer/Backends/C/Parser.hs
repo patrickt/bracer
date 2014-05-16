@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Language.Bracer.Backends.C.Parser (module X) where
   
   import Language.Bracer.Backends.C.Parser.Internal as X

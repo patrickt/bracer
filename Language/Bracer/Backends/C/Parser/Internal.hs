@@ -1,4 +1,4 @@
-{-# LANGUAGE UndecidableInstances, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Language.Bracer.Backends.C.Parser.Internal where
   

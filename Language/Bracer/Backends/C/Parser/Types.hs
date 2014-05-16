@@ -14,18 +14,18 @@ module Language.Bracer.Backends.C.Parser.Types where
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
-  type CTypeSig = Literal :+: Suffix :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
-  
   instance TypeParsing CParser where
-    type TypeSig CParser = CTypeSig
+    type TypeSig CParser = LiteralSig CParser :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
         
     parseTypeName = do
       specs <- parseSpecifierList
       ptrs <- (mconcat . reverse) <$> many parsePointer
       return $ appEndo ptrs specs
   
+  type TypeT = Term (TypeSig CParser)
+  
   instance VariableParsing CParser where
-    type VariableSig CParser = CTypeSig
+    type VariableSig CParser = TypeSig CParser
         
     parseVariable = do
       preamble <- parseSpecifierList
@@ -36,7 +36,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- | Parses 'BaseType' specifiers: any specifier that cannot modify other types,
   -- | like @void@, @char@, @int@, previously specified @typedef@s, and so on.
   -- | This is a subset of the C99 grammar for type specifiers.
-  parseBaseType :: CParser (Term (TypeSig CParser))
+  parseBaseType :: CParser TypeT
   parseBaseType = choice 
     [ solo C.iVoid "void"
     , solo C.iChar "char"
@@ -50,7 +50,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     ] where solo fn n = fn <$ reserve identifierStyle n
   
   -- | Attempts to parse a valid, previously-defined typedef.
-  parseTypedef :: CParser (Term CTypeSig)
+  parseTypedef :: CParser TypeT
   parseTypedef = do
     (Ident nam) <- unTerm <$> try parseIdentifier
     table <- gets _typedefTable
@@ -61,7 +61,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- | Parses 'TypeModifier' specifiers: any storage-class specifier, type qualifier, or 
   -- type specifier that can be applied to another type. If no type is specified, @int@ 
   -- will be provided (e.g. @short@ is the same as @short int@).
-  parseModifier :: CParser (Endo (Term CTypeSig))
+  parseModifier :: CParser (Endo TypeT)
   parseModifier = choice 
     [ endo typedef "typedef"
     , endo C.iExtern "extern"
@@ -84,7 +84,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- | Parses a list of base types and modifiers and combines them into a single type.
   -- TODO: if multiple base types are passed (e.g. @long double double@) this will 
   -- silently drop them on the floor. I can't figure out how to warn with Trifecta yet.
-  parseSpecifierList :: CParser (Term CTypeSig)
+  parseSpecifierList :: CParser TypeT
   parseSpecifierList = do
     let parseTypeSpecifier = (Left <$> parseModifier) <|> (Right <$> parseBaseType)
     (modifiers, roots) <- partitionEithers <$> some parseTypeSpecifier
@@ -94,7 +94,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     return $ modifier typ'
   
   -- | Parses a pointer, possibly qualified with a modifier such as @const@ or @volatile@.
-  parsePointer :: CParser (Endo (Term CTypeSig))
+  parsePointer :: CParser (Endo TypeT)
   parsePointer = do 
     ptr <- Endo C.iPointer <$ (optional someSpace *> char '*' <* optional someSpace)
     quals <- many parseModifier
@@ -102,13 +102,13 @@ module Language.Bracer.Backends.C.Parser.Types where
     return $ mconcat ordered
     
   -- | Parses an argument list for a function type. 
-  parseFunctionAppendix :: CParser (Endo (Term CTypeSig))
+  parseFunctionAppendix :: CParser (Endo TypeT)
   parseFunctionAppendix = do
     funcs <- parens (parseVariable `sepBy` comma)
     return (Endo $ \x -> C.iFunction Anonymous x funcs)
   
   -- | Parses an array modifier with an optional length.
-  parseArrayAppendix :: CParser (Endo (Term CTypeSig))
+  parseArrayAppendix :: CParser (Endo TypeT)
   parseArrayAppendix = do
     let plit = deepInject <$> parseLiteral
     bracks <- brackets (optional plit)
@@ -117,7 +117,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   
   -- | Parses an optionally-named declarator. If a name is present, it will
   -- return a 'Variable', otherwise it will return a type.
-  parseDeclarator :: CParser (Endo (Term CTypeSig))
+  parseDeclarator :: CParser (Endo TypeT)
   parseDeclarator = do
     buildPointers <- foldMany parsePointer
     body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
