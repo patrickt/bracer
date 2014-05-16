@@ -19,39 +19,43 @@ module Language.Bracer.Parsing
   
   -- Class for parsers that understand literals
   class (TokenParsing m) => LiteralParsing m where
-    type LiteralSig :: * -> *
-    parseLiteral :: m (Term LiteralSig)
+    type LiteralSig m :: * -> *
+    parseLiteral :: m (Term (LiteralSig m))
   
   class (TokenParsing m, Monad m) => IdentifierParsing m where
-    type IdentifierSig :: * -> *
-    identifierStyle    :: IdentifierStyle m
-    parseIdentifier    :: m (Term IdentifierSig)
-    parseName          :: m Name
+    type IdentifierSig m :: * -> *
+    identifierStyle      :: IdentifierStyle m
+    parseIdentifier      :: m (Term (IdentifierSig m))
+    parseName            :: m Name
     parseName = Name <$> ident identifierStyle
   
-  class (IdentifierParsing m, LiteralParsing m) => TypeParsing m where
-    type TypeSig :: * -> *
-    parseTypeName :: m (Term TypeSig)
+  class ( LiteralParsing m, LiteralSig m :<: TypeSig m) => TypeParsing m where
+    type TypeSig m :: * -> *
+    parseTypeName :: m (Term (TypeSig m))
   
-  class (TypeParsing m) => VariableParsing m where
-    type VariableSig :: * -> *
+  class (TypeParsing m, TypeSig m :<: VariableSig m) => VariableParsing m where
+    type VariableSig m :: * -> *
     
-    parseVariable :: m (Term VariableSig)
+    parseVariable :: m (Term (VariableSig m))
   
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
-  class (TypeParsing m) => ExpressionParsing m where
-    type ExpressionSig :: * -> *
-    parsePrefixOperator :: m (Term ExpressionSig)
+  class (TypeParsing m, TypeSig m :<: ExpressionSig m) => ExpressionParsing m where
+    type ExpressionSig m :: * -> *
+    parsePrefixOperator :: m (Term (ExpressionSig m))
     
-    parsePostfixOperator :: m (Term ExpressionSig -> Term ExpressionSig)
-    infixOperatorTable :: E.OperatorTable m (Term ExpressionSig)
+    parsePostfixOperator :: m (Term (ExpressionSig m) -> Term (ExpressionSig m))
+    infixOperatorTable :: E.OperatorTable m (Term (ExpressionSig m))
   
-  class (VariableParsing m, ExpressionParsing m) => StatementParsing m where
-    type StatementSig :: * -> *
-    parseStatement :: m (Term StatementSig)
-    parseBlock :: m (Term StatementSig)
+  class (ExpressionParsing m, ExpressionSig m :<: StatementSig m) => StatementParsing m where
+    type StatementSig m :: * -> *
+    parseStatement :: m (Term (StatementSig m))
+    parseBlock :: m (Term (StatementSig m))
   
-  class (StatementParsing m) => DeclarationParsing m where 
-    type DeclarationSig :: * -> *
-    parseDeclaration :: m (Term DeclarationSig)
+  class ( ExpressionParsing m
+        , ExpressionSig m :<: DeclarationSig m
+        , VariableParsing m
+        , VariableSig m :<: DeclarationSig m
+        ) => DeclarationParsing m where 
+    type DeclarationSig m :: * -> *
+    parseDeclaration :: m (Term (DeclarationSig m))

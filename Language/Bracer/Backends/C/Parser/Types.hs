@@ -17,7 +17,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   type CTypeSig = Literal :+: Suffix :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
   
   instance TypeParsing CParser where
-    type TypeSig = CTypeSig
+    type TypeSig CParser = CTypeSig
         
     parseTypeName = do
       specs <- parseSpecifierList
@@ -25,7 +25,7 @@ module Language.Bracer.Backends.C.Parser.Types where
       return $ appEndo ptrs specs
   
   instance VariableParsing CParser where
-    type VariableSig = CTypeSig
+    type VariableSig CParser = CTypeSig
         
     parseVariable = do
       preamble <- parseSpecifierList
@@ -36,7 +36,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- | Parses 'BaseType' specifiers: any specifier that cannot modify other types,
   -- | like @void@, @char@, @int@, previously specified @typedef@s, and so on.
   -- | This is a subset of the C99 grammar for type specifiers.
-  parseBaseType :: CParser (Term CTypeSig)
+  parseBaseType :: CParser (Term (TypeSig CParser))
   parseBaseType = choice 
     [ solo C.iVoid "void"
     , solo C.iChar "char"

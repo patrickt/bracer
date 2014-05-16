@@ -17,7 +17,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
-    type ExpressionSig = CExpressionSig
+    type ExpressionSig CParser = CExpressionSig
     
     parsePrefixOperator = choice 
       [ iDec <$ reserved "--"
@@ -48,25 +48,25 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     
     infixOperatorTable = []
   
-  parsePrimaryExpression :: CParser (Term ExpressionSig)
+  parsePrimaryExpression :: CParser (Term (ExpressionSig CParser))
   parsePrimaryExpression = choice 
     [ deepInject <$> parseIdentifier
     , deepInject <$> parseLiteral
     -- , iParen     <$> parens parseExpression
     ]
    
-  parsePostfixExpression :: CParser (Term ExpressionSig)
+  parsePostfixExpression :: CParser (Term (ExpressionSig CParser))
   parsePostfixExpression = do
     subject <- parsePrimaryExpression
     postfixes <- many parsePostfixOperator
     return $ foldl (>>>) id postfixes subject
   
-  parsePrefixExpression :: CParser (Term ExpressionSig)
+  parsePrefixExpression :: CParser (Term (ExpressionSig CParser))
   parsePrefixExpression = foldl (<<<) id <$> (many (iUnary <$> parsePrefixOperator)) <*> parsePostfixExpression
   
-  parseInfixExpression :: CParser (Term ExpressionSig)
+  parseInfixExpression :: CParser (Term (ExpressionSig CParser))
   parseInfixExpression = E.buildExpressionParser infixOperatorTable parsePrefixExpression
   
-  parseExpression :: CParser (Term ExpressionSig)
+  parseExpression :: CParser (Term (ExpressionSig CParser))
   parseExpression = parseInfixExpression
   

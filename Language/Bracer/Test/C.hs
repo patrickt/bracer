@@ -20,16 +20,21 @@ module Language.Bracer.Test.C (tests) where
   import Language.Bracer
   import Language.Bracer.Backends.C
   import Language.Bracer.Test.Internal
+  
+  type CLiteral = Term (LiteralSig CParser)
+  type CIdent = Term (IdentifierSig CParser)
+  type CType = Term (TypeSig CParser)
+  type CStatement = Term (StatementSig CParser)
 
   tests :: Spec
   tests = describe "C" $ do
     
-    let testInt = iIntLit 1 iNoSuffix :: Term LiteralSig
-    let testFlt = iFltLit 1.0 iNoSuffix :: Term LiteralSig
-    let testFlt2 = iFltLit (127.8) (iFloatSuffix iNoSuffix) :: Term LiteralSig
-    let testFlt3 = iFltLit (616.6e100) iNoSuffix :: Term LiteralSig
-    let testFlt4 = iFltLit (100e-100) iNoSuffix :: Term LiteralSig
-    let testChr = iChrLit 'c' :: Term LiteralSig
+    let testInt = iIntLit 1 iNoSuffix :: CLiteral
+    let testFlt = iFltLit 1.0 iNoSuffix :: CLiteral
+    let testFlt2 = iFltLit (127.8) (iFloatSuffix iNoSuffix) :: CLiteral
+    let testFlt3 = iFltLit (616.6e100) iNoSuffix :: CLiteral
+    let testFlt4 = iFltLit (100e-100) iNoSuffix :: CLiteral
+    let testChr = iChrLit 'c' :: CLiteral
     
     describe "token parser" $ do
       it "ignores traditional comments" $
@@ -81,35 +86,35 @@ module Language.Bracer.Test.C (tests) where
     describe "type parser" $ do
       
       it "parses simple types" $
-        runCParser (parseTypeName <* eof) "int" `shouldParseAs` (iInt :: Term CTypeSig)
+        runCParser (parseTypeName <* eof) "int" `shouldParseAs` (iInt :: CType)
       
       it "parses types with an implicit int" $ do
-        runCParser parseTypeName "long" `shouldParseAs` (iLong iInt :: Term CTypeSig)
+        runCParser parseTypeName "long" `shouldParseAs` (iLong iInt :: CType)
       
       it "parses types with pointers" $ do
-        runCParser parseTypeName "int **" `shouldParseAs` (iPointer (iPointer iInt) :: Term CTypeSig)
+        runCParser parseTypeName "int **" `shouldParseAs` (iPointer (iPointer iInt) :: CType)
       
       it "parses types with qualified pointers" $ do
-        runCParser parseTypeName "int * volatile" `shouldParseAs` (iVolatile (iPointer iInt) :: Term CTypeSig)
+        runCParser parseTypeName "int * volatile" `shouldParseAs` (iVolatile (iPointer iInt) :: CType)
       
       it "parses types with qualified pointers and implicit int" $ do
-        runCParser parseTypeName "long ** const" `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: Term CTypeSig)
+        runCParser parseTypeName "long ** const" `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: CType)
         
       it "parses types with multiple qualified pointers" $ do
-        runCParser parseTypeName "int * const * volatile" `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: Term CTypeSig)
+        runCParser parseTypeName "int * const * volatile" `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: CType)
       
       
     describe "statement parser" $ do
       it "parses bare expressions" $ do
-        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: Term StatementSig)
+        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: CStatement)
       
       it "parses break statements" $
-        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: Term StatementSig)
+        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: CStatement)
       
       it "parses block items" $ do 
         let p = runCParser parseBlock "return 1; return 2; return 3;"
         p `shouldSatisfy` has _Success
-        let (Just (blk :: Statement (Term StatementSig))) = project $ p ^?! _Success 
+        let (Just (blk :: Statement CStatement)) = project $ p ^?! _Success 
         blk `shouldSatisfy` has _Block
         let vec = blk ^. _Block & lengthOf each
         vec `shouldBe` 3

@@ -20,7 +20,7 @@ module Language.Bracer.Backends.C.Parser.Literals where
         else many digit
     return (leading ++ ('.' : trailing))
   
-  naturalExp :: CParser (Term LiteralSig)
+  naturalExp :: CParser (Term (LiteralSig CParser))
   naturalExp = do
     leading <- some digit
     expo <- exponentPart
@@ -48,7 +48,7 @@ module Language.Bracer.Backends.C.Parser.Literals where
       u = iUnsignedSuffix <$> (oneOf "uU" *> integerSuffix)
       l = iLongSuffix     <$> (oneOf "lL" *> integerSuffix)
   
-  floating :: CParser (Term LiteralSig)
+  floating :: CParser (Term (LiteralSig CParser))
   floating = do
     fract <- fractionalConstant
     expo <- fromMaybe [] <$> optional exponentPart
@@ -56,7 +56,7 @@ module Language.Bracer.Backends.C.Parser.Literals where
     return (iFltLit (read (fract ++ expo)) suff)
   
   instance LiteralParsing CParser where
-    type LiteralSig = Literal :+: Suffix
+    type LiteralSig CParser = Literal :+: Suffix
     parseLiteral = choice 
       [ try floating <?> "floating-point constant"
       , try naturalExp

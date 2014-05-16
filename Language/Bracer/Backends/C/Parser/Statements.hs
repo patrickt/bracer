@@ -12,11 +12,11 @@ module Language.Bracer.Backends.C.Parser.Statements where
   import Text.Trifecta
   import Language.Bracer.Backends.C.Parser.Types
 
-  blockItem :: CParser (Term StatementSig)
+  blockItem :: CParser (Term (StatementSig CParser))
   blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
   
   instance StatementParsing CParser where
-    type StatementSig = CExpressionSig :+: Statement
+    type StatementSig CParser = CExpressionSig :+: Statement
     
     parseBlock = iBlock <$> (fromList <$> many parseStatement)
     

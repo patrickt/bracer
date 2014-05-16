@@ -10,6 +10,9 @@ category:            Language
 build-type:          Simple
 cabal-version:       >=1.10
 
+-- NOTE: PT: to enable code coverage add -fhpc to both targets 
+-- then cabal run test, then hpc report test.tix
+
 library
   build-depends:       base >=4.6 && <4.8
                      , ansi-wl-pprint == 0.6.7.*

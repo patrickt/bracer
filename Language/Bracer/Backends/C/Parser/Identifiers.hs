@@ -13,7 +13,7 @@ module Language.Bracer.Backends.C.Parser.Identifiers where
   import Text.Parser.Token.Style
   
   instance IdentifierParsing CParser where
-    type IdentifierSig = Ident
+    type IdentifierSig CParser = Ident
     identifierStyle = c99Idents
     parseIdentifier = iIdent <$> parseName <?> "identifier"
   
