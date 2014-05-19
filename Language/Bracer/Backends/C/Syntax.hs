@@ -37,13 +37,13 @@ module Language.Bracer.Backends.C.Syntax where
     | Builtin Name
     | Char
     | Double
-    | Enum (Maybe Name)
+    | Enum Name
     | Float
     | Int
     | Int128
-    | Struct (Maybe Name)
+    | Struct Name
     | TypeOf a
-    | Union (Maybe Name)
+    | Union Name
     | Void
     -- should Typedef go in here? I can't decide
     deriving (Show, Eq, Functor)

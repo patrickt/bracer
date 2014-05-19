@@ -3,14 +3,14 @@
 module Language.Bracer.Backends.C.Pretty where
 
 import Prelude (error)
-import Overture hiding (Const)
+import Overture hiding (Const, (<$>), group)
 
 import Language.Bracer hiding (Const)
 import Language.Bracer.Pretty
 import Language.Bracer.Backends.C.Syntax
 
-import Data.ByteString
-import Data.ByteString.UTF8
+import Data.ByteString hiding (foldl, group)
+import Data.ByteString.UTF8 (toString)
 import Data.Scientific
 import Data.String
 
@@ -44,16 +44,16 @@ instance PrettyAlg BaseType where
   prettyA (Builtin n) = pretty n
   prettyA Char = "char"
   prettyA Double = "double"
-  prettyA (Enum Nothing) = "enum"
-  prettyA (Enum (Just n)) = "enum" <+> pretty n
+  prettyA (Enum Anonymous) = "enum"
+  prettyA (Enum n) = "enum" <+> pretty n
   prettyA Float = "float"
   prettyA Int = "int"
   prettyA Int128 = "int128_t"
-  prettyA (Struct Nothing) = "struct"
-  prettyA (Struct (Just n)) = "struct" <+> pretty n
+  prettyA (Struct Anonymous) = "struct"
+  prettyA (Struct n) = "struct" <+> pretty n
   prettyA (TypeOf t) = "typeof" <> parens t
-  prettyA (Union Nothing) = "union"
-  prettyA (Union (Just n)) = "union" <+> pretty n
+  prettyA (Union Anonymous) = "union"
+  prettyA (Union n) = "union" <+> pretty n
   prettyA Void = "void"
 
 instance PrettyAlg TypeModifier where
@@ -81,6 +81,25 @@ instance PrettyAlg Expr where
   prettyA e@(Call {})    = e^.target <> tupled (e^.arguments)
   prettyA (Paren t)      = parens t
   prettyA a              = fold a
+
+instance PrettyAlg Statement where
+  prettyA (Block a) = foldl (<$>) mempty a
+  prettyA Break = "break;"
+  prettyA (Case c s) = "case" <+> c <> colon <+> s
+  prettyA Continue = "continue;"
+  prettyA (Compound a) = "{" <$> foldl (<$>) mempty a <$> "}"
+  prettyA (Default s) = "default:" <+> s
+  prettyA Empty = ";"
+  prettyA (For a s) = "for" <+> parens (group a) <+> s
+  prettyA (Goto a) = "goto" <+> a <> semi
+  prettyA (IfThenElse c a Nothing) = "if" <+> parens c <$> a
+  prettyA (IfThenElse c a (Just b)) = "if" <+> parens c <$> a <$> "else" <+> b
+  prettyA (Labeled n a) = pretty n <> colon <+> a
+  prettyA (Return Nothing) = "return;"
+  prettyA (Return (Just a)) = "return" <+> a <> semi
+  prettyA (Switch c s) = "switch" <+> parens c <+> s
+  prettyA (While c s) = "while" <+> parens c <+> s
+  
 
 instance PrettyAlg Operator where
   prettyA Add = "+"

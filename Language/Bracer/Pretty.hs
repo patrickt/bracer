@@ -9,7 +9,7 @@ module Language.Bracer.Pretty
 
   import Data.Comp
   import Data.Comp.Derive
-  import Text.PrettyPrint.ANSI.Leijen hiding ((<>), (<$>))
+  import Text.PrettyPrint.ANSI.Leijen hiding ((<>))
 
   class (Functor f) => PrettyAlg f where
     prettyA :: Alg f Doc

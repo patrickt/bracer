@@ -50,10 +50,3 @@ module Language.Bracer.Parsing
     parseStatement :: m (Term (StatementSig m))
     parseBlock :: m (Term (StatementSig m))
   
-  class ( ExpressionParsing m
-        , ExpressionSig m :<: DeclarationSig m
-        , VariableParsing m
-        , VariableSig m :<: DeclarationSig m
-        ) => DeclarationParsing m where 
-    type DeclarationSig m :: * -> *
-    parseDeclaration :: m (Term (DeclarationSig m))
