@@ -7,7 +7,6 @@ module Language.Bracer.Test.C (tests) where
   
   import Test.Hspec
   import Test.Hspec.QuickCheck
-  import Test.HUnit
   import Test.QuickCheck hiding (Success)
   import Test.QuickCheck.Property
   
@@ -22,7 +21,6 @@ module Language.Bracer.Test.C (tests) where
   import Language.Bracer.Test.Internal
   
   type CLiteral = Term (LiteralSig CParser)
-  type CIdent = Term (IdentifierSig CParser)
 
   tests :: Spec
   tests = describe "C" $ do

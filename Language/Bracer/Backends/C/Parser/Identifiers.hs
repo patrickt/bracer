@@ -9,7 +9,6 @@ module Language.Bracer.Backends.C.Parser.Identifiers where
   
   import Data.HashSet
   import Text.Trifecta
-  import Text.Parser.Token
   import Text.Parser.Token.Style
   
   instance IdentifierParsing CParser where

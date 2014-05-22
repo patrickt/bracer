@@ -2,17 +2,14 @@
 
 module Language.Bracer.Backends.C.Parser.Internal where
   
-  import Prelude (undefined)
+  import Prelude ()
   import Overture hiding (try)
   
   import Language.Bracer.Syntax.Names
-  import Language.Bracer.Parsing
   
   import Control.Monad.State
   import Data.Default
   import Data.HashMap.Lazy (HashMap)
-  import qualified Data.HashMap.Lazy as M
-  import Data.Scientific
   import Text.Trifecta
   import Text.Parser.Token.Style
   

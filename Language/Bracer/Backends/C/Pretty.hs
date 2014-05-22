@@ -12,7 +12,6 @@ import Language.Bracer.Backends.C.Syntax
 import Data.ByteString hiding (foldl, group)
 import Data.ByteString.UTF8 (toString)
 import Data.Scientific
-import Data.String
 
 instance Pretty ByteString where
   pretty = pretty . toString
@@ -58,7 +57,7 @@ instance PrettyAlg BaseType where
 
 instance PrettyAlg TypeModifier where
   -- this isn't right but it will do for now
-  prettyA (Array siz typ) = typ <> brackets (pretty siz)
+  prettyA (Array s t) = t <> brackets (pretty s)
   prettyA (Auto t) = "auto" <+> t
   prettyA (Complex t) = "_Complex" <+> t
   prettyA (Const t) = "const" <+> t

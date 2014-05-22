@@ -6,7 +6,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   import Language.Bracer
   import Language.Bracer.Backends.C.Syntax as C
   import Language.Bracer.Backends.C.Parser.Internal
-  import Language.Bracer.Backends.C.Parser.Types
+  import Language.Bracer.Backends.C.Parser.Types ()
   
   import qualified Text.Parser.Expression as E
   import Text.Trifecta
@@ -40,9 +40,9 @@ module Language.Bracer.Backends.C.Parser.Expressions where
         infixl 1 <$$>
         a <$$> b = (flip a) <$> b
         parseAccessor = do
-          op <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
+          operator <- choice [ iDot <$ dot, iArrow <$ symbol "->" ]
           nam <- (deepInject <$> parseIdentifier)
-          return (\x -> iAccess x op nam)
+          return (\x -> iAccess x operator nam)
     
     infixOperatorTable = []
   

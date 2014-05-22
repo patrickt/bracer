@@ -5,8 +5,7 @@ module Language.Bracer.Syntax.Variables where
   
   import Language.Bracer.Syntax.Names
   import Language.Bracer.Syntax.Lenses
-
-  import Control.Lens
+  
   import Data.Comp.Derive
   
   data Variable a = Variable

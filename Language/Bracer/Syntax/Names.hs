@@ -7,7 +7,6 @@ module Language.Bracer.Syntax.Names
   import Overture
   
   import Control.Lens
-  import Data.Comp.Derive
   import Data.Hashable
 
   import Data.ByteString (ByteString)

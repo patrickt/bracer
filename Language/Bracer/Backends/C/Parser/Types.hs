@@ -1,16 +1,15 @@
 module Language.Bracer.Backends.C.Parser.Types where
   
-  import Prelude (undefined)
+  import Prelude ()
   import Overture hiding (try)
   
   import Language.Bracer
   import Language.Bracer.Backends.C.Syntax as C
   import Language.Bracer.Backends.C.Parser.Internal
-  import Language.Bracer.Backends.C.Parser.Identifiers
-  import Language.Bracer.Backends.C.Parser.Literals
+  import Language.Bracer.Backends.C.Parser.Identifiers ()
+  import Language.Bracer.Backends.C.Parser.Literals ()
   
   import Control.Monad.State
-  import Data.HashMap.Lazy (HashMap)
   import qualified Data.HashMap.Lazy as M
   import Text.Trifecta
   
@@ -112,7 +111,6 @@ module Language.Bracer.Backends.C.Parser.Types where
   parseArrayAppendix = do
     let plit = deepInject <$> parseLiteral
     bracks <- brackets (optional plit)
-    let reBracks = ()
     return $ Endo $ C.iArray bracks
   
   -- | Parses an optionally-named declarator. If a name is present, it will

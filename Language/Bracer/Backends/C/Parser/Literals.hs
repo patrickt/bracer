@@ -1,13 +1,11 @@
 module Language.Bracer.Backends.C.Parser.Literals where 
   
-  import Prelude (error)
   import Overture hiding (try)
   
   import Language.Bracer
   import Language.Bracer.Backends.C.Parser.Internal
   import Language.Bracer.Backends.C.Syntax
   
-  import Data.Scientific
   import Text.Trifecta
   
   fractionalConstant :: CParser String

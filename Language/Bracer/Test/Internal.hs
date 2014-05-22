@@ -14,15 +14,11 @@ import Overture
 import Test.Hspec
 import Test.HUnit
 import Test.QuickCheck hiding (Result)
-import Test.Hspec.QuickCheck
 
 import Control.Lens
 import Data.Comp.Show
 import Data.Scientific
 import Text.Trifecta
-
-import Language.Bracer
-import Language.Bracer.Backends.C
 
 shouldSucceed = return . has _Success
 
