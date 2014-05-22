@@ -15,7 +15,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   
   instance ExpressionParsing CParser where
     -- Coproduct: expressions are either Literals, Idents, Exprs, or Operators
-    type ExpressionSig CParser = TypeSig CParser :+: Ident :+: Expr :+: Operator
+    type ExpressionSig CParser = TypeSig CParser :+: Expr :+: Operator
     
     parsePrefixOperator = choice 
       [ iDec <$ reserved "--"

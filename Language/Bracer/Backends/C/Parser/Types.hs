@@ -14,7 +14,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   import Text.Trifecta
   
   instance TypeParsing CParser where
-    type TypeSig CParser = LiteralSig CParser :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
+    type TypeSig CParser = LiteralSig CParser :+: IdentifierSig CParser :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
         
     parseTypeName = do
       specs <- parseSpecifierList
