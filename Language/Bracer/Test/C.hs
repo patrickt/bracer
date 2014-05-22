@@ -101,6 +101,22 @@ module Language.Bracer.Test.C (tests) where
         
       it "parses types with multiple qualified pointers" $ do
         runCParser parseTypeName "int * const * volatile" `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: TypeT)
+        
+    describe "variable parser" $ do
+      
+      it "parses simple variables" $ do
+        runCParser (parseVariable <* eof) "int x" `shouldParseAs` (iVariable "x" iInt :: VariableT)
+        runCParser (parseVariable <* eof) "long letter" `shouldParseAs` (iVariable "letter" (iLong iInt) :: VariableT)
+      
+      it "parses `const int (* volatile bar)[64]` correctly" $ do
+        runCParser (parseVariable <* eof) "const int (* volatile biggie)[64]" `shouldParseAs`
+          (iVariable "biggie" (iVolatile (iPointer (iArray (Just (iIntLit 64 iNoSuffix)) (iConst iInt)))))
+      
+      
+      it "parses variables with pointers" $ do
+        runCParser (parseVariable <* eof) "const int *bar" `shouldParseAs` (iVariable "bar" (iPointer (iConst iInt)) :: VariableT)
+        
+      
       
       
     describe "statement parser" $ do

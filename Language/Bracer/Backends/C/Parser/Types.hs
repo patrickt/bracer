@@ -28,9 +28,10 @@ module Language.Bracer.Backends.C.Parser.Types where
         
     parseVariable = do
       preamble <- parseSpecifierList
-      ptrs <- foldMany parsePointer
       declarator <- parseDeclarator
-      return $ appEndo declarator $ ptrs preamble
+      return $ appEndo declarator preamble
+  
+  type VariableT = Term (VariableSig CParser)
   
   -- | Parses 'BaseType' specifiers: any specifier that cannot modify other types,
   -- | like @void@, @char@, @int@, previously specified @typedef@s, and so on.
@@ -41,21 +42,21 @@ module Language.Bracer.Backends.C.Parser.Types where
     , solo C.iChar "char"
     , solo C.iInt "int"
     , solo C.iInt128 "__int128_t"
-    , solo (C.iUnsigned C.iInt128) "__uint128_t"
+    , solo C.iUInt128 "__uint128_t"
     , solo C.iFloat "float"
     , solo C.iDouble "double"
     , solo C.iBool "_Bool"
-    , parseTypedef <?> "typedef"
-    ] where solo fn n = fn <$ reserve identifierStyle n
+    , (try parseTypedef) <?> "typedef"
+    ] <?> "type specifier" where solo fn n = fn <$ reserve identifierStyle n
   
   -- | Attempts to parse a valid, previously-defined typedef.
   parseTypedef :: CParser TypeT
   parseTypedef = do
-    (Ident nam) <- unTerm <$> try parseIdentifier
+    (Ident nam) <- unTerm <$> parseIdentifier
     table <- gets _typedefTable
     case M.lookup nam table of
       Just val -> return $ deepInject <$> C._typedefChildType $ unTerm val
-      Nothing -> fail "typedef not found"
+      Nothing -> fail ("typedef " <> show nam <> " not found")
   
   -- | Parses 'TypeModifier' specifiers: any storage-class specifier, type qualifier, or 
   -- type specifier that can be applied to another type. If no type is specified, @int@ 
@@ -76,7 +77,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     , endo C.iSigned "signed"
     , endo C.iUnsigned "unsigned"
     , endo C.iComplex "_Complex"
-    ] where 
+    ] <?> "type qualifier" where 
       typedef a = C.iTypedef a Anonymous
       endo fn n = Endo fn <$ reserve identifierStyle n
   
@@ -117,12 +118,14 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- return a 'Variable', otherwise it will return a type.
   parseDeclarator :: CParser (Endo TypeT)
   parseDeclarator = do
+    let parseOptName = parseName <|> pure Anonymous
     buildPointers <- foldMany parsePointer
-    body <- (Left <$> parseName) <|> (Right <$> parens parseDeclarator)
+    body <- (Left <$> parens parseDeclarator) <|> (Right <$> parseOptName) 
     append <- foldMany (parseFunctionAppendix <|> parseArrayAppendix)
     return $ Endo $ case body of
-      (Left n) -> iVariable n . buildPointers
-      (Right dec) -> appEndo dec . append . buildPointers
+      (Left dec) -> appEndo dec . append . buildPointers
+      (Right n) -> iVariable n . buildPointers
+
   
   -- Helper function that runs an 'Endo'-returning parser then concatenates and unwraps the result.
   foldMany :: Alternative f => f (Endo a) -> f (a -> a)
