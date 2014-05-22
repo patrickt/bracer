@@ -58,6 +58,9 @@ module Language.Bracer.Test.C (tests) where
       it "parses floats with negative exponent parts" $ do
         runCParser (parseLiteral <* eof) "100.0e-100" `shouldParseAs` testFlt4
         runCParser (parseLiteral <* eof) "100e-100" `shouldParseAs` testFlt4
+      
+      it "doesn't accept just a dot as a valid float" $ do
+        (runCParser (parseLiteral <* eof) ".") `shouldSatisfy` has _Failure
 
       prop "parses any floating-point number" $ do
         (NonNegative (s :: Scientific)) <- arbitrary
