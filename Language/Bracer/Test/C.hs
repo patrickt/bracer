@@ -111,7 +111,14 @@ module Language.Bracer.Test.C (tests) where
       it "parses `const int (* volatile bar)[64]` correctly" $ do
         runCParser (parseVariable <* eof) "const int (* volatile biggie)[64]" `shouldParseAs`
           (iVariable "biggie" (iVolatile (iPointer (iArray (Just (iIntLit 64 iNoSuffix)) (iConst iInt)))))
-      
+        
+      it "parses `int (*(*big_pun)(void))[3]` correctly" $ do
+        runCParser (parseVariable <* eof) "int (*(*big_pun)(void ))[3]" `shouldParseAs`
+          (iVariable "big_pun" (iPointer (iFunction Anonymous (iPointer (iArray (Just (iIntLit 3 iNoSuffix)) iInt)) [iVariable Anonymous iVoid])))
+          
+      it "parses `char (*(*x[3])())[5]` correctly" $ do
+        runCParser (parseVariable <* eof) "char (*(*x[3])())[5]" `shouldParseAs`
+          (iVariable "x" (iArray (Just (iIntLit 3 iNoSuffix)) (iPointer (iFunction Anonymous (iPointer (iArray (Just (iIntLit 5 iNoSuffix)) iChar)) []))))
       
       it "parses variables with pointers" $ do
         runCParser (parseVariable <* eof) "const int *bar" `shouldParseAs` (iVariable "bar" (iPointer (iConst iInt)) :: VariableT)
