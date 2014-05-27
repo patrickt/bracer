@@ -20,17 +20,15 @@ module Language.Bracer.Test.C (tests) where
   import Language.Bracer.Backends.C
   import Language.Bracer.Test.Internal
   
-  type CLiteral = Term (LiteralSig CParser)
-
   tests :: Spec
   tests = describe "C" $ do
     
-    let testInt = iIntLit 1 iNoSuffix :: CLiteral
-    let testFlt = iFltLit 1.0 iNoSuffix :: CLiteral
-    let testFlt2 = iFltLit (127.8) (iFloatSuffix iNoSuffix) :: CLiteral
-    let testFlt3 = iFltLit (616.6e100) iNoSuffix :: CLiteral
-    let testFlt4 = iFltLit (100e-100) iNoSuffix :: CLiteral
-    let testChr = iChrLit 'c' :: CLiteral
+    let testInt = iIntLit 1 iNoSuffix
+    let testFlt = iFltLit 1.0 iNoSuffix
+    let testFlt2 = iFltLit (127.8) (iFloatSuffix iNoSuffix)
+    let testFlt3 = iFltLit (616.6e100) iNoSuffix
+    let testFlt4 = iFltLit (100e-100) iNoSuffix
+    let testChr = iChrLit 'c'
     
     describe "token parser" $ do
       it "ignores traditional comments" $
@@ -85,28 +83,46 @@ module Language.Bracer.Test.C (tests) where
     describe "type parser" $ do
       
       it "parses simple types" $
-        runCParser (parseTypeName <* eof) "int" `shouldParseAs` (iInt :: TypeT)
+        runCParser (parseTypeName <* eof) "int" `shouldParseAs` iInt
       
       it "parses types with an implicit int" $ do
-        runCParser parseTypeName "long" `shouldParseAs` (iLong iInt :: TypeT)
+        runCParser parseTypeName "long" `shouldParseAs` iLong iInt
       
       it "parses types with pointers" $ do
-        runCParser parseTypeName "int **" `shouldParseAs` (iPointer (iPointer iInt) :: TypeT)
+        runCParser parseTypeName "int **" `shouldParseAs` iPointer (iPointer iInt)
       
       it "parses types with qualified pointers" $ do
-        runCParser parseTypeName "int * volatile" `shouldParseAs` (iVolatile (iPointer iInt) :: TypeT)
+        runCParser parseTypeName "int * volatile" `shouldParseAs` iVolatile (iPointer iInt)
       
       it "parses types with qualified pointers and implicit int" $ do
-        runCParser parseTypeName "long ** const" `shouldParseAs` (iConst (iPointer (iPointer (iLong iInt))) :: TypeT)
+        runCParser parseTypeName "long ** const" `shouldParseAs` iConst (iPointer (iPointer (iLong iInt)))
         
       it "parses types with multiple qualified pointers" $ do
-        runCParser parseTypeName "int * const * volatile" `shouldParseAs` (iVolatile (iPointer (iConst (iPointer iInt))) :: TypeT)
+        runCParser parseTypeName "int * const * volatile" `shouldParseAs` iVolatile (iPointer (iConst (iPointer iInt)))
+        
+    describe "expression parser" $ do 
+      it "parses bare literals" $ do
+        (runCParser parseExpression "5") `shouldParseAs` iIntLit 5 iNoSuffix
+        (runCParser parseExpression "'c'") `shouldParseAs` iChrLit 'c'
+      
+      it "parses parenthesized literals correctly" $ do
+        (runCParser parseExpression "(10)") `shouldParseAs` iParen (iIntLit 10 iNoSuffix)
+      
+      it "parses identifiers" $ do
+        runCParser parseExpression "foo" `shouldParseAs` iIdent "foo"
+      
+      it "parses simple prefix operators" $ do
+        let notGuilty = iUnary iNot (iIdent "guilty")
+        runCParser parseExpression "!guilty" `shouldParseAs` notGuilty
+        runCParser parseExpression "!!guilty" `shouldParseAs` iUnary iNot notGuilty
+        runCParser parseExpression "! guilty" `shouldParseAs` notGuilty
+        
         
     describe "variable parser" $ do
       
       it "parses simple variables" $ do
-        runCParser (parseVariable <* eof) "int x" `shouldParseAs` (iVariable "x" iInt :: VariableT)
-        runCParser (parseVariable <* eof) "long letter" `shouldParseAs` (iVariable "letter" (iLong iInt) :: VariableT)
+        runCParser (parseVariable <* eof) "int x" `shouldParseAs` iVariable "x" iInt
+        runCParser (parseVariable <* eof) "long letter" `shouldParseAs` iVariable "letter" (iLong iInt)
       
       it "parses `const int (* volatile bar)[64]` correctly" $ do
         runCParser (parseVariable <* eof) "const int (* volatile biggie)[64]" `shouldParseAs`
@@ -121,21 +137,21 @@ module Language.Bracer.Test.C (tests) where
           (iVariable "x" (iArray (Just (iIntLit 3 iNoSuffix)) (iPointer (iFunction Anonymous (iPointer (iArray (Just (iIntLit 5 iNoSuffix)) iChar)) []))))
       
       it "parses variables with pointers" $ do
-        runCParser (parseVariable <* eof) "const int *bar" `shouldParseAs` (iVariable "bar" (iPointer (iConst iInt)) :: VariableT)
+        runCParser (parseVariable <* eof) "const int *bar" `shouldParseAs` iVariable "bar" (iPointer (iConst iInt))
         
       
       
       
     describe "statement parser" $ do
       it "parses bare expressions" $ do
-        (runCParser parseStatement "1;") `shouldParseAs` (iIntLit 1 iNoSuffix :: StatementT)
+        (runCParser parseStatement "1;") `shouldParseAs` iIntLit 1 iNoSuffix
       
       it "parses break statements" $
-        (runCParser parseStatement "break;") `shouldParseAs` (iBreak :: StatementT)
+        (runCParser parseStatement "break;") `shouldParseAs` iBreak
       
       it "parses returns with and without values" $ do
-        (runCParser parseStatement "return;") `shouldParseAs` (iReturn Nothing :: StatementT)
-        (runCParser parseStatement "return 'c';") `shouldParseAs` (iReturn (Just (iChrLit 'c')) :: StatementT)
+        (runCParser parseStatement "return;") `shouldParseAs` iReturn Nothing
+        (runCParser parseStatement "return 'c';") `shouldParseAs` (iReturn (Just (iChrLit 'c')))
       
       it "parses block items" $ do 
         let p = runCParser parseBlock "return 1; return 2; return 3;"

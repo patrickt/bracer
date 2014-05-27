@@ -124,7 +124,7 @@ module Language.Bracer.Backends.C.Parser.Types where
     append <- foldMany (parseFunctionAppendix <|> parseArrayAppendix)
     return $ Endo $ case body of
       (Left dec) -> appEndo dec . append . buildPointers
-      (Right n) -> iVariable n . buildPointers
+      (Right n) -> iVariable n . append . buildPointers
 
   
   -- Helper function that runs an 'Endo'-returning parser then concatenates and unwraps the result.

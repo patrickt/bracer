@@ -26,7 +26,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
       , iPos <$ reserved "+"
       , iNeg <$ reserved "-"
       , iBitwise Neg <$ reserved "~"
-      , iNot <$ reserved "!"
+      , iNot <$ symbol "!"
       , iSizeOf <$ symbol "sizeof"
       ]
     
@@ -52,7 +52,7 @@ module Language.Bracer.Backends.C.Parser.Expressions where
   parsePrimaryExpression = choice 
     [ deepInject <$> parseIdentifier
     , deepInject <$> parseLiteral
-    -- , iParen     <$> parens parseExpression
+    , iParen     <$> parens parseExpression
     ]
    
   parsePostfixExpression :: CParser ExpressionT
