@@ -116,6 +116,20 @@ module Language.Bracer.Test.C (tests) where
         runCParser parseExpression "!guilty" `shouldParseAs` notGuilty
         runCParser parseExpression "!!guilty" `shouldParseAs` iUnary iNot notGuilty
         runCParser parseExpression "! guilty" `shouldParseAs` notGuilty
+      
+      it "parses preincrement rather than two posivate" $ do
+        runCParser parseExpression "++x" `shouldParseAs` iUnary iInc (iIdent "x")
+      
+      it "doesn't parse more than two trailing plus signs" $ do
+        runCParser (parseExpression <* eof) "+++x" `shouldSatisfy` isn't _Success
+        runCParser (parseExpression <* eof) "++++x" `shouldSatisfy` isn't _Success
+      
+      it "parses mixing prefix and postfix correctly" $ do
+        runCParser (parseExpression <* eof) "!blah[500]" `shouldParseAs` 
+          iUnary iNot (iIndex (iIdent "blah") (iIntLit 500 iNoSuffix))
+        runCParser (parseExpression <* eof) "!!something()" `shouldParseAs`
+          iUnary iNot (iUnary iNot (iCall (iIdent "something") []))
+        runCParser (parseExpression <* eof) "*it++" `shouldParseAs` (iUnary iDeref (iUnary iPostInc (iIdent "it")))
         
         
     describe "variable parser" $ do

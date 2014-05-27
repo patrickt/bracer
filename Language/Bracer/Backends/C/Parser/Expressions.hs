@@ -18,14 +18,14 @@ module Language.Bracer.Backends.C.Parser.Expressions where
     type ExpressionSig CParser = TypeSig CParser :+: Expr :+: Operator
     
     parsePrefixOperator = choice 
-      [ iDec <$ reserved "--"
-      , iInc <$ reserved "++"
+      [ iDec <$ (symbol "--" <* notFollowedBy (symbol "-"))
+      , iInc <$ (symbol "++" <* notFollowedBy (symbol "+"))
       , try $ iCast <$> parens (deepInject <$> parseTypeName)
-      , iRef <$ reserved "&"
-      , iDeref <$ reserved "*"
-      , iPos <$ reserved "+"
-      , iNeg <$ reserved "-"
-      , iBitwise Neg <$ reserved "~"
+      , iRef <$ symbol "&"
+      , iDeref <$ symbol "*"
+      , iPos <$ symbol "+"
+      , iNeg <$ symbol "-"
+      , iBitwise Neg <$ symbol "~"
       , iNot <$ symbol "!"
       , iSizeOf <$ symbol "sizeof"
       ]
@@ -34,8 +34,8 @@ module Language.Bracer.Backends.C.Parser.Expressions where
       [ iIndex <$$> brackets (deepInject <$> parseExpression)
       , iCall  <$$> parens (commaSep parseExpression)
       , parseAccessor
-      , iUnary <$$> (iPostInc <$ reserved "++")
-      , iUnary <$$> (iPostDec <$ reserved "--")
+      , iUnary <$> (iPostInc <$ reserved "++")
+      , iUnary <$> (iPostDec <$ reserved "--")
       ] where
         infixl 1 <$$>
         a <$$> b = (flip a) <$> b
