@@ -14,7 +14,14 @@ module Language.Bracer.Backends.C.Parser.Types where
   import Text.Trifecta
   
   instance TypeParsing CParser where
-    type TypeSig CParser = LiteralSig CParser :+: IdentifierSig CParser :+: BaseType :+: TypeModifier :+: Typedef :+: Variable :+: Function
+    type TypeSig CParser =
+      BaseType 
+      :+: TypeModifier 
+      :+: Typedef 
+      :+: Variable 
+      :+: Function 
+      :+: IdentifierSig CParser
+      :+: LiteralSig CParser
         
     parseTypeName = do
       specs <- parseSpecifierList
@@ -22,16 +29,6 @@ module Language.Bracer.Backends.C.Parser.Types where
       return $ appEndo ptrs specs
   
   type TypeT = Term (TypeSig CParser)
-  
-  instance VariableParsing CParser where
-    type VariableSig CParser = TypeSig CParser
-        
-    parseVariable = do
-      preamble <- parseSpecifierList
-      declarator <- parseDeclarator
-      return $ appEndo declarator preamble
-  
-  type VariableT = Term (VariableSig CParser)
   
   -- | Parses 'BaseType' specifiers: any specifier that cannot modify other types,
   -- | like @void@, @char@, @int@, previously specified @typedef@s, and so on.
@@ -48,6 +45,12 @@ module Language.Bracer.Backends.C.Parser.Types where
     , solo C.iBool "_Bool"
     , (try parseTypedef) <?> "typedef"
     ] <?> "type specifier" where solo fn n = fn <$ reserve identifierStyle n
+  
+  parseParameter :: CParser TypeT
+  parseParameter = do
+    preamble <- parseSpecifierList
+    declarator <- parseDeclarator
+    return $ appEndo declarator preamble
   
   -- | Attempts to parse a valid, previously-defined typedef.
   parseTypedef :: CParser TypeT
@@ -104,7 +107,7 @@ module Language.Bracer.Backends.C.Parser.Types where
   -- | Parses an argument list for a function type. 
   parseFunctionAppendix :: CParser (Endo TypeT)
   parseFunctionAppendix = do
-    funcs <- parens (parseVariable `sepBy` comma)
+    funcs <- parens (parseParameter `sepBy` comma)
     return (Endo $ \x -> C.iFunction Anonymous x funcs)
   
   -- | Parses an array modifier with an optional length.

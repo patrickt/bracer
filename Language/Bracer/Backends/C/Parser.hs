@@ -6,3 +6,4 @@ module Language.Bracer.Backends.C.Parser (module X) where
   import Language.Bracer.Backends.C.Parser.Statements as X
   import Language.Bracer.Backends.C.Parser.Literals as X
   import Language.Bracer.Backends.C.Parser.Types as X
+  import Language.Bracer.Backends.C.Parser.Variables as X

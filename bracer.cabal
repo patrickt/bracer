@@ -64,6 +64,7 @@ library
                      , Language.Bracer.Backends.C.Parser.Literals
                      , Language.Bracer.Backends.C.Parser.Statements
                      , Language.Bracer.Backends.C.Parser.Types
+                     , Language.Bracer.Backends.C.Parser.Variables
                      , Language.Bracer.Backends.C.Pretty
                      , Language.Bracer.Backends.C.Syntax
 

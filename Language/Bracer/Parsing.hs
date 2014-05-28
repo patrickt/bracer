@@ -31,11 +31,6 @@ module Language.Bracer.Parsing
     type TypeSig m :: * -> *
     parseTypeName :: m (Term (TypeSig m))
   
-  class (TypeParsing m, TypeSig m :<: VariableSig m) => VariableParsing m where
-    type VariableSig m :: * -> *
-    
-    parseVariable :: m (Term (VariableSig m))
-  
   -- Class for parsers that understand expressions. Note that we use a type family 
   -- here so that parsers, when implementing this class, get to specify the type of parsed expressions
   class (TypeParsing m, TypeSig m :<: ExpressionSig m) => ExpressionParsing m where
@@ -45,7 +40,13 @@ module Language.Bracer.Parsing
     parsePostfixOperator :: m (Term (ExpressionSig m) -> Term (ExpressionSig m))
     infixOperatorTable :: E.OperatorTable m (Term (ExpressionSig m))
   
-  class (ExpressionParsing m, ExpressionSig m :<: StatementSig m) => StatementParsing m where
+  class (ExpressionParsing m, ExpressionSig m :<: VariableSig m) => VariableParsing m where
+    type VariableSig m :: * -> *
+    
+    parseVariable :: m (Term (VariableSig m))
+    parseSizedVariable :: m (Term (VariableSig m))
+  
+  class (VariableParsing m, VariableSig m :<: StatementSig m) => StatementParsing m where
     type StatementSig m :: * -> *
     parseStatement :: m (Term (StatementSig m))
     parseBlock :: m (Term (StatementSig m))

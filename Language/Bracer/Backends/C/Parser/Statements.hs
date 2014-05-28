@@ -9,6 +9,7 @@ module Language.Bracer.Backends.C.Parser.Statements where
   import Language.Bracer.Backends.C.Parser.Identifiers
   import Language.Bracer.Backends.C.Parser.Internal
   import Language.Bracer.Backends.C.Parser.Expressions
+  import Language.Bracer.Backends.C.Parser.Variables
   import Text.Trifecta
   import Language.Bracer.Backends.C.Parser.Types
 
@@ -16,7 +17,7 @@ module Language.Bracer.Backends.C.Parser.Statements where
   blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
   
   instance StatementParsing CParser where
-    type StatementSig CParser = ExpressionSig CParser :+: Statement
+    type StatementSig CParser = VariableSig CParser :+: Statement
     
     parseBlock = iBlock <$> (fromList <$> many parseStatement)
     

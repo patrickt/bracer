@@ -91,6 +91,7 @@ module Language.Bracer.Backends.C.Syntax where
   
   data Declaration a
     = VariableDecl a
+    | SizedDecl a a
     | FunctionDecl a
     | MultipleDecl [a]
     deriving (Show, Eq, Functor)
