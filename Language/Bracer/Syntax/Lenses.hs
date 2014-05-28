@@ -6,7 +6,7 @@ module Language.Bracer.Syntax.Lenses
   
   import Language.Bracer.Syntax.Names
   import Data.Comp
-  import Control.Lens
+  import Control.Lens hiding (scribe)
 
   _sub :: (to :<: super, from :<: super) => Prism (super a) (super a) (from a) (to a)
   _sub = prism' inj proj

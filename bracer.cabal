@@ -66,6 +66,7 @@ library
                      , Language.Bracer.Backends.C.Parser.Types
                      , Language.Bracer.Backends.C.Parser.Variables
                      , Language.Bracer.Backends.C.Pretty
+                     , Language.Bracer.Backends.C.Scribe
                      , Language.Bracer.Backends.C.Syntax
 
   ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
