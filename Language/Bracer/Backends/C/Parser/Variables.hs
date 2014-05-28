@@ -13,7 +13,7 @@ module Language.Bracer.Backends.C.Parser.Variables where
   import Text.Trifecta
   
   instance VariableParsing CParser where
-    type VariableSig CParser = ExpressionSig CParser :+: Declaration :+: Definition
+    type VariableSig CParser = Declaration :+: Definition :+: ExpressionSig CParser
         
     parseVariable = do
       preamble <- parseSpecifierList

@@ -152,6 +152,9 @@ module Language.Bracer.Test.C (tests) where
       
       it "parses variables with pointers" $ do
         runCParser (parseVariable <* eof) "const int *bar;" `shouldParseAs` iVariableDecl (iVariable "bar" (iPointer (iConst iInt)))
+      
+      it "parses variables with pointers" $ do
+        runCParser (parseVariable <* eof) "int foo = 1;" `shouldSatisfy` has _Success
         
       
       

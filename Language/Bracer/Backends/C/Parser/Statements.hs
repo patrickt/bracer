@@ -17,7 +17,7 @@ module Language.Bracer.Backends.C.Parser.Statements where
   blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
   
   instance StatementParsing CParser where
-    type StatementSig CParser = VariableSig CParser :+: Statement
+    type StatementSig CParser = Statement :+: VariableSig CParser
     
     parseBlock = iBlock <$> (fromList <$> many parseStatement)
     
