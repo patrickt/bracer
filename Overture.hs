@@ -52,7 +52,6 @@ module Overture
   import Data.Bool as X
   import Data.Char as X
   import Data.Comp as X hiding ( Const )
-  import Data.Data as X
   import Data.Either as X
   import Data.Eq as X
   import Data.Foldable as X
@@ -89,7 +88,6 @@ module Overture
   import Data.String as X
   import Data.Traversable as X
   import Data.Tuple as X
-  import Data.Typeable as X
   import Data.Word as X
   
   import GHC.Float as X ( roundTo )
