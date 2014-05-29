@@ -62,3 +62,5 @@ module Language.Bracer.Backends.C.Parser.Literals where
       , iChrLit <$> charLiteral <?> "character"
       , iStrLit <$> stringLiteral <?> "string literal"
       ]
+  
+  type LiteralT = Term (LiteralSig CParser)

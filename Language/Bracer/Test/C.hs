@@ -7,8 +7,8 @@ module Language.Bracer.Test.C (tests) where
   
   import Test.Hspec
   import Test.Hspec.QuickCheck
-  import Test.QuickCheck hiding (Success)
-  import Test.QuickCheck.Property
+  import Test.QuickCheck hiding (Success, Result)
+  import Test.QuickCheck.Property hiding (Result)
   
   import Control.Lens
   import Text.Trifecta
@@ -17,8 +17,15 @@ module Language.Bracer.Test.C (tests) where
   import qualified Data.Vector as V
   
   import Language.Bracer
+  import Language.Bracer.Pretty
   import Language.Bracer.Backends.C
   import Language.Bracer.Test.Internal
+  import Text.PrettyPrint.ANSI.Leijen hiding ((<>))
+  
+  roundTrip :: (Pretty a) => CParser a -> a -> Result a
+  roundTrip p it = 
+    let asString = displayS (renderCompact (pretty it)) "" 
+     in runCParser p asString
   
   tests :: Spec
   tests = describe "C" $ do
@@ -177,6 +184,12 @@ module Language.Bracer.Test.C (tests) where
         blk `shouldSatisfy` has _Block
         let vec = blk ^. _Block & lengthOf each
         vec `shouldBe` 3
+    
+    describe "pretty-printing" $ do
       
+      it "should correctly round-trip literals" $ do
+        roundTrip parseLiteral testInt `shouldParseAs` testInt
+        roundTrip parseLiteral testFlt2 `shouldParseAs` testFlt2
+        roundTrip parseLiteral testChr `shouldParseAs` testChr
       
       
