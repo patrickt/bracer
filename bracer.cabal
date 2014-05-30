@@ -1,5 +1,5 @@
 name:                bracer
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            a rewriting system for curly-brace languages
 homepage:            http://github.com/patrickt/bracer
 license:             MIT
