@@ -24,6 +24,7 @@ library
                      , mtl == 2.1.2
                      , parsers == 0.11
                      , scientific == 0.2.0.*
+                     , semigroups == 0.15.*
                      , trifecta == 1.4.2.*
                      , vector == 0.10.*
                      , unordered-containers == 0.2.*
@@ -68,6 +69,8 @@ library
                      , Language.Bracer.Backends.C.Pretty
                      , Language.Bracer.Backends.C.Scribe
                      , Language.Bracer.Backends.C.Syntax
+                     , Language.Bracer.Backends.Swift
+                     , Language.Bracer.Backends.Swift.Syntax
 
   ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
   other-modules:       Overture
@@ -84,6 +87,7 @@ executable test
                     , mtl == 2.1.2
                     , parsers == 0.11
                     , scientific == 0.2.0.*
+                    , semigroups == 0.15.*
                     , trifecta == 1.4.2.*
                     , unordered-containers == 0.2.*
                     , utf8-string == 0.3.*
@@ -117,4 +121,47 @@ executable test
 
   ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
   other-modules:       Overture
-                
+
+executable c2swift
+  build-depends:       base >=4.6 && <4.8
+                    , bracer
+                    , ansi-wl-pprint == 0.6.7.*
+                    , bytestring == 0.10.4.*
+                    , compdata == 0.8.*
+                    , hashable == 1.2.1.*
+                    , data-default == 0.5.*
+                    , lens == 4.1.2
+                    , mtl == 2.1.2
+                    , parsers == 0.11
+                    , scientific == 0.2.0.*
+                    , semigroups == 0.15.*
+                    , trifecta == 1.4.2.*
+                    , unordered-containers == 0.2.*
+                    , utf8-string == 0.3.*
+                    , vector == 0.10.*
+
+  default-language:    Haskell2010
+
+  default-extensions:  ConstraintKinds
+                     , DeriveFunctor
+                     , DeriveFoldable
+                     , DeriveGeneric
+                     , DeriveTraversable
+                     , FlexibleContexts
+                     , FlexibleInstances
+                     , GeneralizedNewtypeDeriving
+                     , KindSignatures
+                     , MultiParamTypeClasses
+                     , OverloadedStrings
+                     , QuasiQuotes
+                     , RankNTypes
+                     , StandaloneDeriving
+                     , TemplateHaskell
+                     , TypeFamilies
+                     , TypeOperators
+                     , UndecidableInstances
+
+  main-is:             C2Swift.hs
+
+  ghc-options:         -Wall -fno-warn-orphans -fno-warn-missing-signatures -fwarn-tabs
+  other-modules:       Overture

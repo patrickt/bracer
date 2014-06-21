@@ -25,7 +25,7 @@ module Overture
                       , ($!)
                       , asTypeOf
                       , const
-					  , error
+                      , error
                       , even
                       , fromIntegral
                       , flip
@@ -35,7 +35,7 @@ module Overture
                       , subtract
                       , odd
                       , until
-					  , undefined
+                      , undefined
                       )
   
   -- The important components of the base package
