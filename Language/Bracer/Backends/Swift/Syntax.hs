@@ -13,6 +13,12 @@ data Struct a = Struct
   , _structAdoptedProtocols :: [Protocol a]
   , _structMembers :: [a]
   } deriving (Show, Eq, Functor)
+  
+data TypeAlias a = TypeAlias { _aliasName :: Name, _aliasType :: a }
+  deriving (Show, Eq, Functor)
+
+newtype Tuple a = Tuple { _tupleMembers :: [a] }
+  deriving (Show, Eq, Functor)
 
 data Protocol a = Protocol
   { _protocolName :: Name
@@ -43,6 +49,8 @@ data Enum a = Enum
 derive 
   [ smartConstructors, makeShowF, makeEqF ] 
   [ ''Struct
+  , ''TypeAlias
+  , ''Tuple
   , ''Protocol
   , ''Class
   , ''EnumCase
