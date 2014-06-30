@@ -21,3 +21,4 @@ Clang is, needless to say, a brilliant piece of infrastructure. However, it has 
 
 [compdata]: http://hackage.haskell.org/package/compdata
 [trifecta]: http://hackage.haskell.org/package/trifecta
+[exprob]: http://en.wikipedia.org/wiki/Expression_problem
