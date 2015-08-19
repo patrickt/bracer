@@ -2,8 +2,8 @@
 
 module Language.Bracer.Backends.C.Pretty where
 
-import Prelude (error)
 import Overture hiding (Const, (<$>), group)
+import Prelude ()
 
 import Language.Bracer hiding (Const)
 import Language.Bracer.Pretty
@@ -16,7 +16,7 @@ import Data.Scientific
 instance Pretty ByteString where
   pretty = pretty . toString
 
-instance Pretty Scientific where 
+instance Pretty Scientific where
   pretty = pretty . formatScientific Fixed Nothing
 
 instance Pretty Name where
@@ -25,9 +25,9 @@ instance Pretty Name where
 
 deriving instance Pretty (Ident a)
 
-instance PrettyAlg Literal where 
+instance PrettyAlg Literal where
   prettyA (IntLit i s) = pretty i <> s
-  prettyA (FltLit f s) = pretty f <> s 
+  prettyA (FltLit f s) = pretty f <> s
   -- if anyone can think of a better way to ensure characters are escaped, let me know
   prettyA (ChrLit c) = pretty $ show c
   prettyA (StrLit s) = dquotes $ pretty s
@@ -98,7 +98,7 @@ instance PrettyAlg Statement where
   prettyA (Return (Just a)) = "return" <+> a <> semi
   prettyA (Switch c s) = "switch" <+> parens c <+> s
   prettyA (While c s) = "while" <+> parens c <+> s
-  
+
 
 instance PrettyAlg Operator where
   prettyA Add = "+"
@@ -116,20 +116,20 @@ instance PrettyAlg Operator where
   prettyA Dot = "."
   prettyA Arrow = "->"
   prettyA Not = "!"
-  
+
   prettyA And = "&&"
   prettyA Or = "||"
   prettyA Xor = "^"
-  
+
   prettyA Neg = "-"
   prettyA Pos = "+"
   prettyA LShift = "<<"
   prettyA RShift = ">>"
   prettyA SizeOf = "sizeof"
-  
+
   prettyA Ref = "&"
   prettyA Deref = "*"
-  
+
   prettyA PostInc = "++"
   prettyA PostDec = "--"
   prettyA (Bitwise And) = "&"

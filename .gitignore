@@ -4,3 +4,4 @@ cabal.sandbox.config
 dist
 .hpc
 *.tix
+.stack-work

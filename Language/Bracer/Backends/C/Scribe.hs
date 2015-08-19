@@ -9,23 +9,20 @@ import Control.Monad.Writer
 
 import Control.Monad.Identity
 import Data.Vector (Vector)
-import Data.String
 import qualified Data.Vector as V
 import Language.Bracer.Syntax
-import Language.Bracer.Syntax.Names
 import Language.Bracer.Backends.C.Syntax
 import Language.Bracer.Backends.C.Parser
-import Language.Bracer.Backends.C.Parser.Statements
 import Language.Bracer.Parsing
 
--- GHC complains if you try to 
+-- GHC complains if you try to
 newtype Wrapper = W { unW :: (Term (StatementSig CParser)) }
 
 newtype Scribe a = Scribe { unScribe :: WriterT (Vector Wrapper) Identity a }
   deriving ( Functor
            , Applicative
            , Monad)
-          
+
 instance MonadWriter (Vector Wrapper) Scribe where
   tell = Scribe . tell
   listen = Scribe . listen . unScribe
@@ -39,11 +36,11 @@ int = iInt
 
 lit :: Integer -> StatementT
 lit i = iIntLit i iNoSuffix
--- 
+--
 tell' t = tell $ V.singleton $ W t
 
 def :: StatementT -> Name -> StatementT -> Scribe ()
-def typ nam val = tell' $ iVariableDefn (iVariable nam typ) val
+def t nam val = tell' $ iVariableDefn (iVariable nam t) val
 
 block :: Scribe () -> Scribe ()
 block contents = do
@@ -57,4 +54,3 @@ sample :: Scribe ()
 sample = block $ do
   def int "retval" (lit 0)
   ret (iIdent "retval")
-

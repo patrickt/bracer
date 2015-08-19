@@ -1,26 +1,26 @@
 module Language.Bracer.Backends.C.Parser.Statements where
-  
+
   import Prelude ()
   import Overture
-  
+
   import Data.Vector
   import Language.Bracer
   import Language.Bracer.Backends.C.Syntax as C
   import Language.Bracer.Backends.C.Parser.Identifiers
   import Language.Bracer.Backends.C.Parser.Internal
   import Language.Bracer.Backends.C.Parser.Expressions
-  import Language.Bracer.Backends.C.Parser.Variables
+  import Language.Bracer.Backends.C.Parser.Variables ()
   import Text.Trifecta
-  import Language.Bracer.Backends.C.Parser.Types
+  import Language.Bracer.Backends.C.Parser.Types ()
 
   blockItem :: CParser (Term (StatementSig CParser))
   blockItem = choice [deepInject <$> parseStatement, deepInject <$> parseVariable]
-  
+
   instance StatementParsing CParser where
     type StatementSig CParser = Statement :+: VariableSig CParser
-    
+
     parseBlock = iBlock <$> (fromList <$> many parseStatement)
-    
+
     parseStatement = choice
       [ C.iBreak      <$  reserved "break;"
       , C.iCase       <$> ("case" **> parseExp) <*> (colon *> parseStatement)
@@ -37,5 +37,5 @@ module Language.Bracer.Backends.C.Parser.Statements where
       , parseExp      <*  semi
       , C.iEmpty      <$  semi
       ] where parseExp = deepInject <$> parseExpression
-  
+
   type StatementT = Term (StatementSig CParser)

@@ -2,18 +2,17 @@ module Language.Bracer.Backends.Swift.Syntax where
 
 import Prelude ()
 import Overture hiding (Enum)
-import Data.List.NonEmpty
 
 import Language.Bracer.Syntax.Names
 import Data.Comp.Derive
 
-data Struct a = Struct 
+data Struct a = Struct
   { _structName :: Name
   , _structParameterizedTypes :: [a]
   , _structAdoptedProtocols :: [Protocol a]
   , _structMembers :: [a]
   } deriving (Show, Eq, Functor)
-  
+
 data TypeAlias a = TypeAlias { _aliasName :: Name, _aliasType :: a }
   deriving (Show, Eq, Functor)
 
@@ -46,8 +45,8 @@ data Enum a = Enum
   , _enumCases :: [EnumCase a]
   } deriving (Show, Eq, Functor)
 
-derive 
-  [ smartConstructors, makeShowF, makeEqF ] 
+derive
+  [ smartConstructors, makeShowF, makeEqF ]
   [ ''Struct
   , ''TypeAlias
   , ''Tuple
