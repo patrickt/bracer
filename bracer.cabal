@@ -17,15 +17,15 @@ library
   build-depends:       base
                      , ansi-wl-pprint
                      , bytestring
-                     , compdata == 0.10.*
+                     , compdata
                      , hashable
                      , data-default
-                     , lens == 4.12.*
+                     , lens
                      , mtl
-                     , parsers == 0.12.*
+                     , parsers
                      , scientific
                      , semigroups
-                     , trifecta == 1.5.*
+                     , trifecta
                      , vector
                      , unordered-containers
                      , utf8-string
@@ -80,15 +80,15 @@ executable test
                      , bracer
                      , ansi-wl-pprint
                      , bytestring
-                     , compdata == 0.10.*
+                     , compdata
                      , hashable
                      , data-default
-                     , lens == 4.12.*
+                     , lens
                      , mtl
-                     , parsers == 0.12.*
+                     , parsers
                      , scientific
                      , semigroups
-                     , trifecta == 1.5.*
+                     , trifecta
                      , vector
                      , unordered-containers
                      , utf8-string
@@ -127,15 +127,15 @@ executable c2swift
                      , bracer
                      , ansi-wl-pprint
                      , bytestring
-                     , compdata == 0.10.*
+                     , compdata
                      , hashable
                      , data-default
-                     , lens == 4.12.*
+                     , lens
                      , mtl
-                     , parsers == 0.12.*
+                     , parsers
                      , scientific
                      , semigroups
-                     , trifecta == 1.5.*
+                     , trifecta
                      , vector
                      , unordered-containers
                      , utf8-string

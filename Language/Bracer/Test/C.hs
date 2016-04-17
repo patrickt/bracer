@@ -70,10 +70,11 @@ module Language.Bracer.Test.C (tests) where
         let res = runCParser (parseLiteral <* eof) (show s)
         shouldSucceed res
 
-      prop "preserves floating-point numbers round trip" $ do
-        (NonNegative (s :: Scientific)) <- arbitrary
-        let res = runCParser (parseLiteral <* eof) (show s) ^? _Success
-        property (res /= (iFltLit s iNoSuffix))
+      -- Doesn't compile as of 2015/8/10
+      -- prop "preserves floating-point numbers round trip" $ do
+      --   (NonNegative (s :: Scientific)) <- arbitrary
+      --   let res = runCParser (parseLiteral <* eof) (show s) ^? _Success
+      --   property (res /= (iFltLit s iNoSuffix))
 
     describe "identifier parser" $ do
       let parseIdentifier' = parseIdentifier :: CParser (Term Ident)
