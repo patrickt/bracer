@@ -1,5 +1,11 @@
-flags: {}
+resolver: nightly-2016-06-21
 packages:
 - '.'
-extra-deps: []
-resolver: lts-2.22
+- location:
+    git: git@github.com:ekmett/trifecta
+    commit: 53f76115ceba688fb0f5aef2fea5d085a1f813ec
+  extra-dep: true
+extra-deps:
+  - compdata-0.10.1
+  - trifecta-1.5.2
+  - tree-view-0.4

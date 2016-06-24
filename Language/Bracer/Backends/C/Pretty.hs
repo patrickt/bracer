@@ -5,7 +5,7 @@ module Language.Bracer.Backends.C.Pretty where
 import Overture hiding (Const, (<$>), group)
 import Prelude ()
 
-import Language.Bracer hiding (Const)
+import Language.Bracer hiding (Const, Empty)
 import Language.Bracer.Pretty
 import Language.Bracer.Backends.C.Syntax
 
